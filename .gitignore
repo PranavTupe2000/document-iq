@@ -1,4 +1,4 @@
 doc-iq-venv/
 \.vscode/
-mlflow.db
+**/mlflow.db
 **/__pycache__
