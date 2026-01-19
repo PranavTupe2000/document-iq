@@ -1,0 +1,13 @@
+document_id,text,label
+doc_001,Invoice from ABC Ltd amount 12000,INVOICE
+doc_002,Purchase order generated on Jan 10,PO
+doc_003,Delivery receipt for shipment 342,RECEIPT
+doc_001,Invoice from ABC Ltd amount 12000,INVOICE
+doc_002,Purchase order generated on Jan 10,PO
+doc_003,Delivery receipt for shipment 342,RECEIPT
+doc_001,Invoice from ABC Ltd amount 12000,INVOICE
+doc_002,Purchase order generated on Jan 10,PO
+doc_003,Delivery receipt for shipment 342,RECEIPT
+doc_001,Invoice from ABC Ltd amount 12000,INVOICE
+doc_002,Purchase order generated on Jan 10,PO
+doc_003,Delivery receipt for shipment 342,RECEIPT

@@ -1,0 +1,29 @@
+{
+    "row_count": 12,
+    "missing_check": {
+        "missing_values": {
+            "document_id": 0,
+            "text": 0,
+            "label": 0
+        },
+        "has_missing": false
+    },
+    "empty_text_check": {
+        "empty_text_rows": 0,
+        "has_empty_text": false
+    },
+    "class_distribution": {
+        "class_counts": {
+            "INVOICE": 4,
+            "PO": 4,
+            "RECEIPT": 4
+        },
+        "class_distribution": {
+            "INVOICE": 0.3333,
+            "PO": 0.3333,
+            "RECEIPT": 0.3333
+        }
+    },
+    "meets_minimum_rows": true,
+    "status": "PASS"
+}
