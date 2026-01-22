@@ -30,3 +30,12 @@ stages:
       - src/document_iq_dl/datasets/funsd_dataset.py
     outs:
       - artifacts/model
+  evaluation:
+    cmd: python src/document_iq_dl/components/model_evaluation.py
+    deps:
+      - artifacts/model
+      - data/processed
+      - configs/training.yaml
+      - src/document_iq_dl/components/model_evaluation.py
+    outs:
+      - artifacts/evaluation
