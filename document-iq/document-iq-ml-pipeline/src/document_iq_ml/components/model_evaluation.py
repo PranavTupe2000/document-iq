@@ -3,8 +3,11 @@ from mlflow.tracking import MlflowClient
 
 from document_iq_core.utils import get_logger, DocumentIQException
 
-logger = get_logger("ModelEvaluation")
+import os
+from dotenv import load_dotenv
 
+logger = get_logger("ModelEvaluation")
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 
 class ModelEvaluation:
     """
@@ -70,9 +73,27 @@ class ModelEvaluation:
         return best_run, best_metric
 
     def _register_and_promote(self, best_run):
-        model_uri = f"runs:/{best_run.info.run_id}/model"
+        run_id = best_run.info.run_id
 
-        logger.info(f"Registering model from run: {best_run.info.run_id}")
+        # 🔍 Verify model artifact exists
+        artifacts = self.client.list_artifacts(run_id)
+        
+        # Debug: log all artifacts found
+        logger.info(f"Artifacts found in run {run_id}: {[a.path for a in artifacts]}")
+        
+        model_artifacts = [a for a in artifacts if a.path == "model"]
+
+        if not model_artifacts:
+            logger.error(f"Available artifacts: {[a.path for a in artifacts]}")
+            raise DocumentIQException(
+                f"No model artifact found under run {run_id}. "
+                "Ensure mlflow.sklearn.log_model() was called."
+            )
+
+        model_uri = f"runs:/{run_id}/model"
+
+        logger.info(f"Registering model from URI: {model_uri}")
+
         registered_model = mlflow.register_model(
             model_uri=model_uri,
             name=self.model_name,
@@ -80,23 +101,11 @@ class ModelEvaluation:
 
         version = registered_model.version
 
-        logger.info(
-            f"Assigning alias 'production' to model version {version}"
-        )
-
-        # NEW: use alias instead of stage
+        # ✅ Alias-based promotion (modern MLflow)
         self.client.set_registered_model_alias(
             name=self.model_name,
             alias="production",
             version=version,
-        )
-
-        # Optional but recommended: tag the model version
-        self.client.set_model_version_tag(
-            name=self.model_name,
-            version=version,
-            key="lifecycle",
-            value="production",
         )
 
         return version

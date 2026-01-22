@@ -12,9 +12,10 @@ import mlflow.sklearn
 
 from sklearn.preprocessing import LabelEncoder
 import joblib
+import os
+from dotenv import load_dotenv
 
 from document_iq_ml.artifacts import LABEL_ENCODER_PATH
-
 from document_iq_core.utils import get_logger, DocumentIQException
 from document_iq_ml.artifacts import (
     X_TRAIN_PATH,
@@ -22,9 +23,10 @@ from document_iq_ml.artifacts import (
     Y_TRAIN_PATH,
     Y_VAL_PATH,
 )
-
+load_dotenv()
 logger = get_logger("ModelTrainer")
 
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 
 class ModelTrainer:
     """
@@ -152,39 +154,39 @@ class ModelTrainer:
                     },
                     False,
                 ),
-                (
-                    "linear_svm",
-                    LinearSVC(),
-                    {
-                        "C": [0.1, 1.0, 10],
-                    },
-                    False,
-                ),
-                (
-                    "gradient_boosting",
-                    GradientBoostingClassifier(random_state=self.random_state),
-                    {
-                        "n_estimators": [100, 200],
-                        "learning_rate": [0.05, 0.1],
-                    },
-                    False,
-                ),
-                (
-                    "xgboost",
-                    XGBClassifier(
-                        objective="multi:softprob",
-                        eval_metric="mlogloss",
-                        random_state=self.random_state,
-                        n_jobs=-1,
-                    ),
-                    {
-                        "n_estimators": [100, 200],
-                        "max_depth": [3, 6],
-                        "learning_rate": [0.05, 0.1],
-                        "subsample": [0.8, 1.0],
-                    },
-                    True,   # requires label encoding
-                ),
+                # (
+                #     "linear_svm",
+                #     LinearSVC(),
+                #     {
+                #         "C": [0.1, 1.0, 10],
+                #     },
+                #     False,
+                # ),
+                # (
+                #     "gradient_boosting",
+                #     GradientBoostingClassifier(random_state=self.random_state),
+                #     {
+                #         "n_estimators": [100, 200],
+                #         "learning_rate": [0.05, 0.1],
+                #     },
+                #     False,
+                # ),
+                # (
+                #     "xgboost",
+                #     XGBClassifier(
+                #         objective="multi:softprob",
+                #         eval_metric="mlogloss",
+                #         random_state=self.random_state,
+                #         n_jobs=-1,
+                #     ),
+                #     {
+                #         "n_estimators": [100, 200],
+                #         "max_depth": [3, 6],
+                #         "learning_rate": [0.05, 0.1],
+                #         "subsample": [0.8, 1.0],
+                #     },
+                #     True,   # requires label encoding
+                # ),
             ]
 
 
