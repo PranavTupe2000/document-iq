@@ -50,3 +50,33 @@ stages:
       md5: 5a26fa3f0d83b441dcda0fb8a28141f5.dir
       size: 144691626
       nfiles: 7412
+  training:
+    cmd: python src/document_iq_dl/components/model_trainer.py
+    deps:
+    - path: configs/training.yaml
+      hash: md5
+      md5: 78ffdbddd124d40add2307f857e54d39
+      size: 339
+    - path: data/processed
+      hash: md5
+      md5: 5a26fa3f0d83b441dcda0fb8a28141f5.dir
+      size: 144691626
+      nfiles: 7412
+    - path: src/document_iq_dl/components/model_trainer.py
+      hash: md5
+      md5: a1dc1f3435113b1c7d5f94d93a89c026
+      size: 5430
+    - path: src/document_iq_dl/datasets/funsd_dataset.py
+      hash: md5
+      md5: 8f8e161d928b4fbb646afedd0af553b4
+      size: 1906
+    - path: src/document_iq_dl/models/layout_classifier.py
+      hash: md5
+      md5: e368a19bfca09dc249bacbbf8837d4be
+      size: 551
+    outs:
+    - path: artifacts/model
+      hash: md5
+      md5: 45cba15308e847736f8a3e9b158b5b54.dir
+      size: 44785111
+      nfiles: 2
