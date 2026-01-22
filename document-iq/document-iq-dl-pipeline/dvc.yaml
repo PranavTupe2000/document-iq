@@ -3,6 +3,6 @@ stages:
     cmd: python document_iq_dl/components/data_ingestion.py
     deps:
       - data/raw/FUNSD
-      - document_iq_dl/components/data_ingestion.py
+      - src/document_iq_dl/components/data_ingestion.py
     outs:
       - data/interim/funsd_blocks.json
