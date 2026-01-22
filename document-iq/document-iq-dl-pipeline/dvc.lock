@@ -33,3 +33,20 @@ stages:
       hash: md5
       md5: 8b7839d6ffa7fd7b45882b9218009f0e
       size: 185
+  transformation:
+    cmd: python src/document_iq_dl/components/data_transformation.py
+    deps:
+    - path: data/interim/funsd_blocks.json
+      hash: md5
+      md5: db1a10196337f982f62c68a53ec6af12
+      size: 1602102
+    - path: src/document_iq_dl/components/data_transformation.py
+      hash: md5
+      md5: 4c045380b03d8ace51ba2c7685e27fe2
+      size: 2418
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 5a26fa3f0d83b441dcda0fb8a28141f5.dir
+      size: 144691626
+      nfiles: 7412
