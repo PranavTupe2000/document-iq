@@ -17,3 +17,19 @@ stages:
       hash: md5
       md5: db1a10196337f982f62c68a53ec6af12
       size: 1602102
+  validation:
+    cmd: python src/document_iq_dl/components/data_validation.py
+    deps:
+    - path: data/interim/funsd_blocks.json
+      hash: md5
+      md5: db1a10196337f982f62c68a53ec6af12
+      size: 1602102
+    - path: src/document_iq_dl/components/data_validation.py
+      hash: md5
+      md5: c5a2d155bea07bb3f61b27173efd871d
+      size: 3338
+    outs:
+    - path: artifacts/validation_report.json
+      hash: md5
+      md5: 8b7839d6ffa7fd7b45882b9218009f0e
+      size: 185
