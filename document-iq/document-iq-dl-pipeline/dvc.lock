@@ -55,7 +55,7 @@ stages:
     deps:
     - path: configs/training.yaml
       hash: md5
-      md5: 78ffdbddd124d40add2307f857e54d39
+      md5: 042b5631e952cecc9d47720966bf7d8b
       size: 339
     - path: data/processed
       hash: md5
@@ -64,8 +64,8 @@ stages:
       nfiles: 7412
     - path: src/document_iq_dl/components/model_trainer.py
       hash: md5
-      md5: a1dc1f3435113b1c7d5f94d93a89c026
-      size: 5430
+      md5: 36fc21c33542ca595eefb277695af7fd
+      size: 5475
     - path: src/document_iq_dl/datasets/funsd_dataset.py
       hash: md5
       md5: 8f8e161d928b4fbb646afedd0af553b4
@@ -77,7 +77,7 @@ stages:
     outs:
     - path: artifacts/model
       hash: md5
-      md5: 45cba15308e847736f8a3e9b158b5b54.dir
+      md5: 170e713214d6b581e45541ea487699d6.dir
       size: 44785111
       nfiles: 2
   evaluation:
@@ -85,12 +85,12 @@ stages:
     deps:
     - path: artifacts/model
       hash: md5
-      md5: 45cba15308e847736f8a3e9b158b5b54.dir
+      md5: 170e713214d6b581e45541ea487699d6.dir
       size: 44785111
       nfiles: 2
     - path: configs/training.yaml
       hash: md5
-      md5: 78ffdbddd124d40add2307f857e54d39
+      md5: 042b5631e952cecc9d47720966bf7d8b
       size: 339
     - path: data/processed
       hash: md5
@@ -99,11 +99,11 @@ stages:
       nfiles: 7412
     - path: src/document_iq_dl/components/model_evaluation.py
       hash: md5
-      md5: e20e421c816c941dc44e42f65969831b
-      size: 3357
+      md5: 2c289c796ea75712d632c3075448d05a
+      size: 3403
     outs:
     - path: artifacts/evaluation
       hash: md5
-      md5: 0ee3d51e7009af08250cf377b8e9584e.dir
-      size: 78
+      md5: c2f1a139c280dc60676d37941f2c8406.dir
+      size: 77
       nfiles: 1

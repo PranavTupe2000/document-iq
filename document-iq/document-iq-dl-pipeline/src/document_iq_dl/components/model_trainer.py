@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 import torch
 import torch.nn as nn
@@ -13,6 +14,7 @@ from document_iq_core.utils import get_logger, DocumentIQException
 from document_iq_dl.datasets.funsd_dataset import FUNSDLayoutDataset
 from document_iq_dl.models.layout_classifier import build_layout_classifier
 
+load_dotenv()
 logger = get_logger("DLModelTrainer")
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 
