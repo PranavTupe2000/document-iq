@@ -20,3 +20,13 @@ stages:
       - src/document_iq_dl/components/data_transformation.py
     outs:
       - data/processed
+  training:
+    cmd: python src/document_iq_dl/components/model_trainer.py
+    deps:
+      - data/processed
+      - configs/training.yaml
+      - src/document_iq_dl/components/model_trainer.py
+      - src/document_iq_dl/models/layout_classifier.py
+      - src/document_iq_dl/datasets/funsd_dataset.py
+    outs:
+      - artifacts/model
