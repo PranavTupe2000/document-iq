@@ -1,6 +1,6 @@
 stages:
   ingestion:
-    cmd: python document_iq_dl/components/data_ingestion.py
+    cmd: python src/document_iq_dl/components/data_ingestion.py
     deps:
       - data/raw/FUNSD
       - src/document_iq_dl/components/data_ingestion.py

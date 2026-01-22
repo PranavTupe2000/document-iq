@@ -1,0 +1,19 @@
+schema: '2.0'
+stages:
+  ingestion:
+    cmd: python src/document_iq_dl/components/data_ingestion.py
+    deps:
+    - path: data/raw/FUNSD
+      hash: md5
+      md5: 3ce75d0190cf7518f8ebaadd888fcf4b.dir
+      size: 27779251
+      nfiles: 400
+    - path: src/document_iq_dl/components/data_ingestion.py
+      hash: md5
+      md5: 4aab42e719100a64841f6242e73e5602
+      size: 1662
+    outs:
+    - path: data/interim/funsd_blocks.json
+      hash: md5
+      md5: db1a10196337f982f62c68a53ec6af12
+      size: 1602102
