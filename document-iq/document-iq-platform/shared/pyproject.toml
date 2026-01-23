@@ -1,5 +1,5 @@
 [project]
-name = "platform-shared"
+name = "platform_shared"
 version = "0.1.0"
 description = "Shared utilities, schemas, and events for DocumentIQ platform"
 dependencies = [
