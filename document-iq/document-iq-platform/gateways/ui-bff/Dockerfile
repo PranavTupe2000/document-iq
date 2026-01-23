@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY pyproject.toml .
-COPY ../../shared/src/platform-shared platform-shared
+COPY ../../shared/src/platform_shared platform_shared
 
 
 RUN pip install --upgrade pip \

@@ -2,6 +2,7 @@
 name = "document-iq-ui-bff"
 version = "0.1.0"
 dependencies = [
+    "document-iq-shared @ file:///shared/src/platform_shared",
     "fastapi",
     "uvicorn",
     "kafka-python",
