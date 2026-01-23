@@ -1,0 +1,16 @@
+[project]
+name = "platform-shared"
+version = "0.1.0"
+description = "Shared utilities, schemas, and events for DocumentIQ platform"
+dependencies = [
+    "pydantic",
+    "python-dotenv",
+    "kafka-python",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
