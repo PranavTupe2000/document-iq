@@ -1,0 +1,43 @@
+name: Publish documentiq-core
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version 0.0.1"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set version
+        working-directory: documeny-iq/document-iq-core
+        run: |
+          sed -i "s/^version = .*/version = \"${{ inputs.version }}\"/" pyproject.toml
+
+      - name: Build package
+        working-directory: documeny-iq/document-iq-core
+        run: |
+          pip install build twine
+          python -m build
+
+      - name: Publish package
+        working-directory: documeny-iq/document-iq-core
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          twine upload \
+            --repository-url https://upload.pypi.org/legacy/ \
+            dist/*
