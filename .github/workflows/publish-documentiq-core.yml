@@ -53,5 +53,5 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           twine upload \
-            --repository-url https://pypi.pkg.github.com/YOUR_ORG_NAME \
+            --repository-url https://pypi.pkg.github.com/PranavTupe2000 \
             dist/*
