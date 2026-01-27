@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  aggregator:
+    build:
+      context: .
+      dockerfile: components/aggregator/Dockerfile
+    depends_on:
+      - kafka
+      - redis
+    environment:
+      DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCUMENT_IQ_REDIS_HOST: redis
+      DOCUMENT_IQ_REDIS_PORT: 6379
+    command: python -m document_iq_platform_aggregator.main
+
+  dlq-tooling:
+    build:
+      context: .
+      dockerfile: ops/dlq-tooling/Dockerfile
+    depends_on:
+      - kafka
+      - redis
+    environment:
+      DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCUMENT_IQ_REDIS_HOST: redis
+      DOCUMENT_IQ_REDIS_PORT: 6379
+    command: python -m document_iq_dlq_tooling.monitor
+
+  ui-bff:
+    build:
+      context: .
+      dockerfile: gateways/ui-bff/Dockerfile
+    depends_on:
+      - kafka
+    ports:
+      - "8000:8000"
+    environment:
+      DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092

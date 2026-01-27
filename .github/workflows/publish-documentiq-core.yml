@@ -22,18 +22,19 @@ jobs:
           python-version: "3.11"
 
       - name: Set version
-        working-directory: documeny-iq/document-iq-core
+        working-directory: document-iq/documentiq-core
         run: |
-          sed -i "s/^version = .*/version = \"${{ inputs.version }}\"/" pyproject.toml
+            sed -i 's/^version *= *.*/version = "0.0.1"/' pyproject.toml
+
 
       - name: Build package
-        working-directory: documeny-iq/document-iq-core
+        working-directory: document-iq/document-iq-core
         run: |
           pip install build twine
           python -m build
 
       - name: Publish package
-        working-directory: documeny-iq/document-iq-core
+        working-directory: document-iq/document-iq-core
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
