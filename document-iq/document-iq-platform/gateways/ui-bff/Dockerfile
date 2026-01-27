@@ -8,16 +8,22 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-COPY pyproject.toml .
-COPY ../../shared/src/platform_shared platform_shared
+# Neutral, consistent working dir
+WORKDIR /srv
 
+# Copy shared package (must be inside build context)
+COPY shared /shared
 
-RUN pip install --upgrade pip \
-    && pip install .
+# Copy pyproject first for caching
+COPY gateways/ui-bff/pyproject.toml .
 
-COPY app app
+# Install dependencies + UI-BFF package
+RUN pip install --upgrade pip && pip install .
+
+# Copy source code
+COPY gateways/ui-bff/src src
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run as module (IMPORTANT)
+CMD ["uvicorn", "document_iq_ui_bff.main:app", "--host", "0.0.0.0", "--port", "8000"]
