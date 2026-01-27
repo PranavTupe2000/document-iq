@@ -1,44 +1,57 @@
-name: Publish documentiq-core
+name: Publish documentiq-core (manual)
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version 0.0.1"
+        description: "Version to publish (e.g. 0.0.1)"
         required: true
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Set version
+      # 🔍 Debug once – REMOVE after first successful run
+      - name: Debug folder structure
+        run: |
+          pwd
+          ls
+          ls document-iq
+          ls document-iq/documentiq-core
+
+      - name: Set version in pyproject.toml
         working-directory: document-iq/documentiq-core
         run: |
-            sed -i 's/^version *= *.*/version = "0.0.1"/' pyproject.toml
-
+          sed -i 's/^version *= *.*/version = "${{ inputs.version }}"/' pyproject.toml
+          echo "Updated pyproject.toml:"
+          cat pyproject.toml | grep version
 
       - name: Build package
-        working-directory: document-iq/document-iq-core
+        working-directory: document-iq/documentiq-core
         run: |
+          python -m pip install --upgrade pip
           pip install build twine
           python -m build
 
-      - name: Publish package
-        working-directory: document-iq/document-iq-core
+      - name: Publish package to GitHub Packages
+        working-directory: document-iq/documentiq-core
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           twine upload \
-            --repository-url https://upload.pypi.org/legacy/ \
+            --repository-url https://pypi.pkg.github.com/YOUR_ORG_NAME \
             dist/*
