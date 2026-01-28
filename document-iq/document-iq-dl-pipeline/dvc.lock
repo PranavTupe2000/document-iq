@@ -55,8 +55,8 @@ stages:
     deps:
     - path: configs/training.yaml
       hash: md5
-      md5: 042b5631e952cecc9d47720966bf7d8b
-      size: 339
+      md5: ba38da2e17f5465873cac37e18c59289
+      size: 367
     - path: data/processed
       hash: md5
       md5: 5a26fa3f0d83b441dcda0fb8a28141f5.dir
@@ -77,7 +77,7 @@ stages:
     outs:
     - path: artifacts/model
       hash: md5
-      md5: 170e713214d6b581e45541ea487699d6.dir
+      md5: 5abc5d232e93fefa86c6d41048ac1600.dir
       size: 44785111
       nfiles: 2
   evaluation:
@@ -85,13 +85,13 @@ stages:
     deps:
     - path: artifacts/model
       hash: md5
-      md5: 170e713214d6b581e45541ea487699d6.dir
+      md5: 5abc5d232e93fefa86c6d41048ac1600.dir
       size: 44785111
       nfiles: 2
     - path: configs/training.yaml
       hash: md5
-      md5: 042b5631e952cecc9d47720966bf7d8b
-      size: 339
+      md5: ba38da2e17f5465873cac37e18c59289
+      size: 367
     - path: data/processed
       hash: md5
       md5: 5a26fa3f0d83b441dcda0fb8a28141f5.dir
@@ -104,6 +104,6 @@ stages:
     outs:
     - path: artifacts/evaluation
       hash: md5
-      md5: c2f1a139c280dc60676d37941f2c8406.dir
+      md5: 27c44301b74dfa9a9c29106c50d6a2a1.dir
       size: 77
       nfiles: 1
