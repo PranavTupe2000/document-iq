@@ -3,3 +3,4 @@ doc-iq-venv/
 **/mlflow.db
 **/__pycache__
 dev/data/
+**/dist
