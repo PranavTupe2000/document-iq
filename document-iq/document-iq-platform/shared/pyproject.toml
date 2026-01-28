@@ -1,12 +1,12 @@
 [project]
-name = "platform_shared"
+name = "document-iq-platform-shared"
 version = "0.1.0"
 description = "Shared utilities, schemas, and events for DocumentIQ platform"
 dependencies = [
     "pydantic",
     "python-dotenv",
     "kafka-python",
-    "document-iq-core @ git+https://github.com/PranavTupe2000/document-iq.git@master#subdirectory=document-iq/document-iq-core"
+    "document-iq-core"
 ]
 
 [build-system]

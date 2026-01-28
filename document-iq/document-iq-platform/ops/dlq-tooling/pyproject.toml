@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 dependencies = [
     "kafka-python",
     "redis",
-    "platform-shared @ git+https://github.com/PranavTupe2000/document-iq.git@master#subdirectory=document-iq/document-iq-platform/shared"
+    "document-iq-platform-shared"
 ]
 
 [tool.setuptools]
