@@ -1,5 +1,5 @@
 [project]
-name = "documentiq-core"
+name = "document-iq-core"
 version = "1.0.0"
 description = "Shared core library for DocumentIQ"
 requires-python = ">=3.9"

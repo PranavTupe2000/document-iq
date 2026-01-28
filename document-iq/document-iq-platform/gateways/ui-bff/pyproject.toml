@@ -2,11 +2,12 @@
 name = "document-iq-ui-bff"
 version = "0.1.0"
 dependencies = [
-    "document-iq-shared @ file:///shared/src/platform_shared",
     "fastapi",
     "uvicorn",
     "kafka-python",
     "pydantic",
+    "document-iq-core @ git+https://github.com/PranavTupe2000/document-iq.git@master#subdirectory=document-iq/document-iq-core",
+    "platform-shared @ git+https://github.com/PranavTupe2000/document-iq.git@master#subdirectory=document-iq/document-iq-platform/shared"
 ]
 
 [build-system]

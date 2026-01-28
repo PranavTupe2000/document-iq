@@ -9,7 +9,8 @@ dependencies = [
     "kafka-python",
     "pydantic",
     "python-dotenv",
-    "redis"
+    "redis",
+    "documentiq-core @ git+https://github.com/PranavTupe2000/DocumentIQ.git@v0.0.1#subdirectory=document-iq/documentiq-core"
 ]
 
 [build-system]
