@@ -17,11 +17,11 @@ COPY shared /shared
 # Copy pyproject first for caching
 COPY gateways/ui-bff/pyproject.toml .
 
-# Install dependencies + UI-BFF package
-RUN pip install --upgrade pip && pip install .
-
 # Copy source code
 COPY gateways/ui-bff/src src
+
+# Install dependencies + UI-BFF package
+RUN pip install --upgrade pip && pip install .
 
 EXPOSE 8000
 

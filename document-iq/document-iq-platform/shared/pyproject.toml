@@ -6,6 +6,7 @@ dependencies = [
     "pydantic",
     "python-dotenv",
     "kafka-python",
+    "document-iq-core @ git+https://github.com/PranavTupe2000/document-iq.git@master#subdirectory=document-iq/document-iq-core"
 ]
 
 [build-system]
