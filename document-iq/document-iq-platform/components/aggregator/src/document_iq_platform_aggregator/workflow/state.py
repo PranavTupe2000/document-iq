@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from document_iq_core.utils import get_logger
-from document_iq_platform_aggregator.workflow.redis_client import get_redis_client
+from platform_shared.storage.redis_client import get_redis_client
 
 logger = get_logger("WorkflowState")
 

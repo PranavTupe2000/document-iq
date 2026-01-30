@@ -1,6 +1,6 @@
 [project]
 name = "document-iq-platform-aggregator"
-version = "0.1.0"
+version = "1.0.1"
 description = "Document aggregator service for DocumentIQ platform"
 requires-python = ">=3.9"
 dependencies = [

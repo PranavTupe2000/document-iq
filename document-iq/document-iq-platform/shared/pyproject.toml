@@ -1,9 +1,10 @@
 [project]
 name = "document-iq-platform-shared"
-version = "0.1.0"
+version = "1.0.2"
 description = "Shared utilities, schemas, and events for DocumentIQ platform"
 dependencies = [
     "pydantic",
+    "pydantic-settings",
     "python-dotenv",
     "kafka-python",
     "document-iq-core"

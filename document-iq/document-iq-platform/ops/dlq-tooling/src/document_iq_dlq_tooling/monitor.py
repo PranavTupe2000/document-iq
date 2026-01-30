@@ -22,3 +22,6 @@ def monitor_dlq():
         )
 
         storage.store(event)
+
+if __name__ == "__main__":
+    monitor_dlq()

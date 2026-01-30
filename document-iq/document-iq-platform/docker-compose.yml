@@ -19,6 +19,11 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "bash", "-c", "nc -z localhost 9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7
@@ -30,8 +35,10 @@ services:
       context: .
       dockerfile: components/aggregator/Dockerfile
     depends_on:
-      - kafka
-      - redis
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -43,8 +50,10 @@ services:
       context: .
       dockerfile: ops/dlq-tooling/Dockerfile
     depends_on:
-      - kafka
-      - redis
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -56,7 +65,10 @@ services:
       context: .
       dockerfile: gateways/ui-bff/Dockerfile
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
     ports:
       - "8000:8000"
     environment:

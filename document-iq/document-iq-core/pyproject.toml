@@ -1,6 +1,6 @@
 [project]
 name = "document-iq-core"
-version = "1.0.0"
+version = "1.0.1"
 description = "Shared core library for DocumentIQ"
 requires-python = ">=3.9"
 dependencies = [
