@@ -96,6 +96,21 @@ services:
       - ingestion-data:/srv/data
     restart: unless-stopped
 
+  classification-worker:
+    build:
+      context: .
+      dockerfile: components/classification-worker/Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCUMENT_IQ_REDIS_HOST: redis
+      DOCUMENT_IQ_REDIS_PORT: 6379
+      MLFLOW_TRACKING_URI: http://host.docker.internal:5000
+    restart: unless-stopped
 
 volumes:
   ingestion-data:
