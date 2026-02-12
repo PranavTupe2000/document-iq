@@ -1,9 +1,10 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    kafka_bootstrap_servers: str = "kafka:9092"
-    redis_host: str = "redis"
-    redis_port: int = 6379
+    kafka_bootstrap_servers: str
+    redis_host: str
+    redis_port: int
 
     class Config:
         env_prefix = "DOCUMENT_IQ_"
+        env_file = ".env"

@@ -1,4 +1,5 @@
 from platform_shared.messaging.kafka import create_consumer
+from platform_shared.config.settings import Settings
 from document_iq_core.utils import get_logger
 
 from document_iq_platform_aggregator.workflow.state import WorkflowState
@@ -11,6 +12,7 @@ from document_iq_platform_aggregator.producers.dispatcher import dispatch
 from document_iq_platform_aggregator.producers.dlq import send_to_dlq
 
 logger = get_logger("LayoutResultConsumer")
+settings = Settings()
 
 state = WorkflowState()
 idempotency = IdempotencyGuard()
@@ -19,7 +21,7 @@ idempotency = IdempotencyGuard()
 def consume_layout():
     consumer = create_consumer(
         topic="document.layout.completed",
-        bootstrap_servers="kafka:9092",
+        bootstrap_servers=settings.kafka_bootstrap_servers,
         group_id="aggregator-layout",
     )
 

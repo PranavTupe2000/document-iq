@@ -7,10 +7,11 @@ from document_iq_ui_bff.schemas.document import (
     DocumentAnalyzeResponse,
 )
 from document_iq_ui_bff.kafka.producer import EventProducer
+from platform_shared.config.settings import Settings
 
 router = APIRouter()
-
-producer = EventProducer(brokers="kafka:9092")
+settings = Settings()
+producer = EventProducer(brokers=settings.kafka_bootstrap_servers)
 
 
 @router.post(
