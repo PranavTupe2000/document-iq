@@ -130,7 +130,7 @@ class ModelEvaluation:
         )
 
         best_run, best_metric = self._select_best_run(child_runs)
-        model_version = self._register_and_promote(best_run)
+        # model_version = self._register_and_promote(best_run)
 
         logger.info("Model Evaluation & Registration completed successfully")
 
@@ -140,6 +140,6 @@ class ModelEvaluation:
             "best_run_id": best_run.info.run_id,
             "best_metric": best_metric,
             "model_name": self.model_name,
-            "model_version": model_version,
+            # "model_version": model_version,
             "alias": "production",
         }

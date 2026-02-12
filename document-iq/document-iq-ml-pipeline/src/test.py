@@ -1,6 +1,6 @@
 # Data Ingestion
 from document_iq_ml.components.data_ingestion import DataIngestion
-DataIngestion("rvl_cdip_subset.csv").run()
+DataIngestion("sample_documents.csv").run()
 
 # Data Validation
 from document_iq_ml.components.data_validation import DataValidation
@@ -14,6 +14,6 @@ DataTransformation().run()
 from document_iq_ml.components.model_trainer import ModelTrainer
 ModelTrainer().run()
 
-# Model Evaluation
-from document_iq_ml.components.model_evaluation import ModelEvaluation
-ModelEvaluation().run()
+# # Model Evaluation
+# from document_iq_ml.components.model_evaluation import ModelEvaluation
+# ModelEvaluation().run()

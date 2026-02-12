@@ -1,12 +1,14 @@
 import pandas as pd
+from platform_shared.config.settings import Settings
 from platform_shared.storage.redis_client import get_redis_client
 from platform_shared.messaging.kafka import create_producer
 from document_iq_core.utils import get_logger
 from document_iq_platform_classification.model_loader import load_model
 
 logger = get_logger("ClassificationService")
+settings = Settings()
 
-producer = create_producer()
+producer = create_producer(bootstrap_servers=settings.kafka_bootstrap_servers)
 redis_client = get_redis_client()
 model = load_model()
 

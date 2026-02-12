@@ -112,30 +112,33 @@ class ModelTrainer:
 
         mlflow.log_params(grid.best_params_)
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(best_model, name="model")
+        # mlflow.sklearn.log_model(best_model, artifact_path="model")
 
-        return {
-            "model_name": model_name,
-            "best_params": grid.best_params_,
-            "metrics": metrics,
-        }
+        return (
+            {
+                "model_name": model_name,
+                "best_params": grid.best_params_,
+                "metrics": metrics,
+            },
+            best_model,   # ✅ return trained model
+        )
 
+        
     def run(self) -> dict:
         logger.info("Starting Model Training with GridSearchCV")
 
         X_train, X_val, y_train, y_val = self._load_data()
-        mlflow.set_experiment(self.experiment_name)
 
         best_overall = {
             "model_name": None,
             "metrics": {"f1_score": -1},
             "params": None,
+            "model": None,
         }
 
-        with mlflow.start_run() as parent_run:
-            mlflow.log_param("pipeline_stage", "model_training")
+        mlflow.log_param("pipeline_stage", "model_training")
 
-            algorithms = [
+        algorithms = [
                 (
                     "logistic_regression",
                     LogisticRegression(max_iter=1000),
@@ -189,10 +192,11 @@ class ModelTrainer:
                 # ),
             ]
 
+        for name, model, param_grid, requires_encoding in algorithms:
 
-            for name, model, param_grid, requires_encoding in algorithms:
-                with mlflow.start_run(run_name=name, nested=True):
-                    result = self._run_gridsearch(
+            with mlflow.start_run(run_name=name, nested=True):
+
+                result, fitted_model = self._run_gridsearch(
                         name,
                         model,
                         param_grid,
@@ -201,25 +205,15 @@ class ModelTrainer:
                         X_val,
                         y_val,
                         requires_label_encoding=requires_encoding,
-                    )
+                )
 
+                if result["metrics"]["f1_score"] > best_overall["metrics"]["f1_score"]:
+                    best_overall = {
+                        "model_name": name,
+                        "metrics": result["metrics"],
+                        "params": result["best_params"],
+                        "model": fitted_model,
+                    }
 
-                    if result["metrics"]["f1_score"] > best_overall["metrics"]["f1_score"]:
-                        best_overall = {
-                            "model_name": name,
-                            "metrics": result["metrics"],
-                            "params": result["best_params"],
-                        }
-
-            # Log BEST MODEL SUMMARY in PARENT RUN
-            mlflow.log_param("best_model", best_overall["model_name"])
-            mlflow.log_metrics({
-                "best_accuracy": best_overall["metrics"]["accuracy"],
-                "best_f1_score": best_overall["metrics"]["f1_score"],
-            })
-
-            for k, v in best_overall["params"].items():
-                mlflow.log_param(f"best_{k}", v)
-
-        logger.info("Model Training completed successfully")
         return best_overall
+
