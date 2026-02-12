@@ -35,7 +35,7 @@ def process_event(event: dict):
 
     # 3️⃣ Publish next stage event
     producer.send(
-        "document.classification.requested",
+        "document.classification.completed",
         {
             "request_id": request_id,
             "file_path": file_path,
