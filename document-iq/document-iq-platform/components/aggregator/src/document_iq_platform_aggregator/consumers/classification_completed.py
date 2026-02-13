@@ -21,6 +21,7 @@ def consume_classification_completed():
         event = msg.value
         request_id = event["request_id"]
         classification_result = event["classification_result"]
+        file_path = event["file_path"]
 
         logger.info(f"Classification completed for {request_id}")
 
@@ -32,12 +33,12 @@ def consume_classification_completed():
             },
         )
 
-        # Example: trigger layout stage
+        # Trigger layout stage
         producer.send(
             "document.layout.requested",
             {
                 "request_id": request_id,
-                "classification_result": classification_result,
+                "file_path": file_path,
             },
         )
 

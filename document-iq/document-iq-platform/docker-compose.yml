@@ -114,5 +114,24 @@ services:
 
     restart: unless-stopped
 
+  layout-worker:
+    build:
+      context: .
+      dockerfile: components/layout-worker/Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCUMENT_IQ_REDIS_HOST: redis
+      DOCUMENT_IQ_REDIS_PORT: 6379
+    env_file:
+      - .env
+    volumes:
+      - ingestion-data:/srv/data
+    restart: unless-stopped
+
 volumes:
   ingestion-data:
