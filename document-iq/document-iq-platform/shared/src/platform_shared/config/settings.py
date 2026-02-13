@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
 
@@ -10,9 +11,16 @@ class Settings(BaseSettings):
     redis_port: int
 
     # MLflow
-    mlflow_tracking_uri: str
-    mlflow_tracking_username: str
-    mlflow_tracking_password: str
+    mlflow_tracking_uri: Optional[str] = None
+    mlflow_tracking_username: Optional[str] = None
+    mlflow_tracking_password: Optional[str] = None
+
+    # Azure OCR
+    azure_ocr_endpoint: Optional[str] = None
+    azure_ocr_key: Optional[str] = None
+    
+    # ENV
+    env: str = "dev"  # default
 
     class Config:
         env_prefix = "DOCUMENT_IQ_"

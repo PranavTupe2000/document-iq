@@ -17,33 +17,34 @@ def process_event(event: dict):
     request_id = event["request_id"]
     file_path = event["file_path"]
 
+    workflow_key = f"workflow:{request_id}"
+
+    # Fetch OCR text from Redis
+    ocr_text = redis_client.hget(workflow_key, "ocr_text")
+
+    if not ocr_text:
+        raise Exception(f"OCR text missing for {request_id}")
+
     logger.info(f"Running classification for {request_id}")
 
-    # For now: simple text-based placeholder
-    # Later replace with real feature extraction pipeline
-    df = pd.DataFrame([{"file_path": file_path}])
+    prediction = model.predict([ocr_text])[0]
 
-    prediction = model.predict(df)[0]
-
-    # Update workflow state
     redis_client.hset(
-        f"workflow:{request_id}",
+        workflow_key,
         mapping={
             "classification_status": "completed",
             "classification_result": prediction,
         },
     )
 
-    # Publish completion
     producer.send(
         "document.classification.completed",
         {
             "request_id": request_id,
-            "file_path": file_path,
             "classification_result": prediction,
+            "file_path": file_path,
         },
     )
-
     producer.flush()
 
     logger.info(f"Classification completed for {request_id}")

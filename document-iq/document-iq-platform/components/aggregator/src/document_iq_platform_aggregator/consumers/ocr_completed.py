@@ -3,18 +3,17 @@ from platform_shared.messaging.kafka import create_consumer, create_producer
 from platform_shared.storage.redis_client import get_redis_client
 from document_iq_core.utils import get_logger
 
-logger = get_logger("AggregatorIngestionCompleted")
+logger = get_logger("OCRCompletedConsumer")
 
 settings = Settings()
-producer = create_producer(bootstrap_servers=settings.kafka_bootstrap_servers)
 redis_client = get_redis_client()
+producer = create_producer(bootstrap_servers=settings.kafka_bootstrap_servers)
 
-
-def consume_ingestion_completed():
+def consume_ocr_completed():
     consumer = create_consumer(
-        topic="document.ingestion.completed",
+        topic="document.ocr.completed",
         bootstrap_servers=settings.kafka_bootstrap_servers,
-        group_id="aggregator-ingestion-completed",
+        group_id="aggregator-ocr-completed",
     )
 
     for msg in consumer:
@@ -22,26 +21,23 @@ def consume_ingestion_completed():
         request_id = event["request_id"]
         file_path = event["file_path"]
 
-        logger.info(f"Ingestion completed for {request_id}")
+        logger.info(f"OCR completed for {request_id}")
 
-        # Update workflow state
         redis_client.hset(
             f"workflow:{request_id}",
             mapping={
-                "ingestion_status": "completed",
-                "file_path": file_path,
+                "ocr_status": "completed"
             },
         )
 
-        # Trigger OCR
+        # Trigger classification with only request_id
         producer.send(
-            "document.ocr.requested",
+            "document.classification.requested",
             {
                 "request_id": request_id,
                 "file_path": file_path,
             },
         )
-
         producer.flush()
 
         logger.info(f"Classification requested for {request_id}")

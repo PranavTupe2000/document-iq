@@ -35,7 +35,7 @@ def process_event(event: dict):
 
     # 3️⃣ Publish next stage event
     producer.send(
-        "document.classification.completed",
+        "document.ingestion.completed",
         {
             "request_id": request_id,
             "file_path": file_path,
@@ -44,4 +44,4 @@ def process_event(event: dict):
 
     producer.flush()
 
-    logger.info(f"Published classification request for {request_id}")
+    logger.info(f"Published ingestion completed event for {request_id}")

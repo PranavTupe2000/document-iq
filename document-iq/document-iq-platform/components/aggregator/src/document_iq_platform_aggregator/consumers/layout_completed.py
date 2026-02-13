@@ -3,6 +3,8 @@ from platform_shared.messaging.kafka import create_consumer
 from platform_shared.storage.redis_client import get_redis_client
 from document_iq_core.utils import get_logger
 
+import json
+
 logger = get_logger("LayoutCompletedConsumer")
 redis_client = get_redis_client()
 settings = Settings()
@@ -25,7 +27,7 @@ def consume_layout_completed():
             f"workflow:{request_id}",
             mapping={
                 "layout_status": "completed",
-                "layout_result": event["layout_result"],
+                "layout_result": json.dumps(event["layout_result"]),
             },
         )
 
