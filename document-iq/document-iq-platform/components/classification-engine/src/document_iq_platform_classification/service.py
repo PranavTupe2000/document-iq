@@ -37,6 +37,15 @@ def process_event(event: dict):
         },
     )
 
+    # message = {
+    #         "request_id": request_id,
+    #         "classification_result": prediction,
+    #         "file_path": file_path,
+    #     }
+    
+    # print(message)
+    # logger.info(f"Sending message: {message}")
+
     producer.send(
         "document.classification.completed",
         {

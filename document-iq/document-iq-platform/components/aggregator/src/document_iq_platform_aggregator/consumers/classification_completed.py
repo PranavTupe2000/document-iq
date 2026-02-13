@@ -19,9 +19,34 @@ def consume_classification_completed():
 
     for msg in consumer:
         event = msg.value
-        request_id = event["request_id"]
-        classification_result = event["classification_result"]
-        file_path = event["file_path"]
+        request_id = event.get("request_id")
+        has_classification_result = "classification_result" in event
+        classification_result = event.get("classification_result")
+        file_path = event.get("file_path")
+
+        if not request_id:
+            logger.error(f"Skipping malformed classification event without request_id: {event}")
+            continue
+
+        if not has_classification_result:
+            logger.error(
+                "Skipping classification event for "
+                f"{request_id}: classification_result key missing; "
+                f"event_keys={list(event.keys())}"
+            )
+            continue
+
+        if classification_result is None:
+            logger.error(
+                "Skipping classification event for "
+                f"{request_id}: classification_result is null; "
+                f"event_keys={list(event.keys())}"
+            )
+            continue
+
+        if not file_path:
+            logger.error(f"Skipping classification event for {request_id}: missing file_path")
+            continue
 
         logger.info(f"Classification completed for {request_id}")
 

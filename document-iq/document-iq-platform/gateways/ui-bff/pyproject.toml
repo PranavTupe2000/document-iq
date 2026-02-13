@@ -6,6 +6,7 @@ dependencies = [
     "uvicorn",
     "kafka-python",
     "pydantic",
+    "python-multipart",
     "document-iq-platform-shared"
 ]
 
