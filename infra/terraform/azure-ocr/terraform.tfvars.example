@@ -1,0 +1,3 @@
+resource_group_name     = "documentiq-ocr-rg"
+location                = "eastus"
+cognitive_account_name  = "documentiqocr123"
