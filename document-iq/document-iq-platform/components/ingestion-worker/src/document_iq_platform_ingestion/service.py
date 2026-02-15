@@ -28,6 +28,7 @@ def process_event(event: dict):
         mapping={
             "ingestion_status": "completed",
             "file_path": file_path,
+            "current_stage": "ingestion_completed",
         },
     )
 

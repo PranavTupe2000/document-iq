@@ -86,6 +86,8 @@ def process_event(event: dict):
         mapping={
             "rag_status": "completed",
             "rag_response": str(structured_response),
+            "current_stage": "completed",
+            "overall_status": "completed",
         },
     )
 

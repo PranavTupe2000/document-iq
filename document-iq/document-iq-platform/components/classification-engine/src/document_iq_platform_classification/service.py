@@ -34,6 +34,7 @@ def process_event(event: dict):
         mapping={
             "classification_status": "completed",
             "classification_result": prediction,
+            "current_stage": "classification_completed",
         },
     )
 

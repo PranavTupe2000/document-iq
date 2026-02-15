@@ -33,6 +33,7 @@ def process_event(event: dict):
         mapping={
             "ocr_status": "completed",
             "ocr_text": extracted_text,
+            "current_stage": "ocr_completed",
         },
     )
 

@@ -34,6 +34,7 @@ def process_event(event: dict):
             mapping={
                 "layout_status": "completed",
                 "layout_result": json.dumps(layout_result),
+                "current_stage": "layout_completed",
             },
         )
 

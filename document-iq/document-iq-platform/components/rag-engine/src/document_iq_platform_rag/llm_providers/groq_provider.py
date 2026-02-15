@@ -1,6 +1,5 @@
-import os
+from pydantic import ValidationError
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage
 
 from document_iq_platform_rag.schemas.rag_response import RAGResponse
 from document_iq_platform_rag.llm_providers.base import LLMProvider
@@ -16,8 +15,17 @@ class GroqProvider(LLMProvider):
             temperature=0.1,
         )
 
-        self.llm = base_llm.with_structured_output(RAGResponse)
+        # Use JSON mode instead of function calling, which is less reliable on
+        # some Groq model/tool combinations.
+        self.llm = base_llm.with_structured_output(RAGResponse, method="json_mode")
 
     def generate(self, prompt: str) -> dict:
         response = self.llm.invoke(prompt)
-        return response.dict()
+        if isinstance(response, RAGResponse):
+            return response.model_dump()
+        if isinstance(response, dict):
+            try:
+                return RAGResponse(**response).model_dump()
+            except ValidationError as exc:
+                raise ValueError(f"Invalid structured response from LLM: {exc}") from exc
+        raise ValueError(f"Unexpected LLM response type: {type(response).__name__}")
