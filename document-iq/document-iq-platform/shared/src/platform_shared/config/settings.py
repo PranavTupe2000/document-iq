@@ -21,7 +21,18 @@ class Settings(BaseSettings):
     
     # ENV
     env: str = "dev"  # default
+    
+    # RAG
+    rag_llm_provider: Optional[str] = None
+    chroma_persist_dir: Optional[str] = None
+    
+    groq_api_key: Optional[str] = None
+    groq_model: Optional[str] = None
+    
+    huggingface_embedding_model: Optional[str] = None
+    
 
     class Config:
         env_prefix = "DOCUMENT_IQ_"
         env_file = ".env"
+        extra = "ignore"

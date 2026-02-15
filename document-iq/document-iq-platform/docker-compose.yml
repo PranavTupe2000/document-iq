@@ -150,5 +150,26 @@ services:
       - .env
     restart: unless-stopped
 
+  rag-engine:
+    build:
+      context: .
+      dockerfile: components/rag-engine/Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCUMENT_IQ_REDIS_HOST: redis
+      DOCUMENT_IQ_REDIS_PORT: 6379
+      DOCUMENT_IQ_CHROMA_PERSIST_DIR: /srv/chroma_data
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - rag_chroma_data:/srv/chroma_data
+
 volumes:
   ingestion-data:
+  rag_chroma_data:

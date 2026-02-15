@@ -1,0 +1,29 @@
+[project]
+name = "document-iq-platform-rag"
+version = "1.0.0"
+description = "Document aggregator service for DocumentIQ platform"
+requires-python = ">=3.9"
+dependencies = [
+    "requests",
+    "kafka-python",
+    "pydantic",
+    "python-dotenv",
+    "redis",
+    "langchain",
+    "langchain-community",
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain-huggingface",
+    "langchain-groq",
+    "langchain-chroma",
+    "sentence-transformers",
+    "chromadb",
+    "document-iq-platform-shared"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

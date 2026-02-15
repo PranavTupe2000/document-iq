@@ -1,6 +1,6 @@
 [project]
 name = "document-iq-platform-shared"
-version = "1.0.4"
+version = "1.0.6"
 description = "Shared utilities, schemas, and events for DocumentIQ platform"
 dependencies = [
     "pydantic",
