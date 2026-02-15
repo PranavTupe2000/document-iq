@@ -15,9 +15,15 @@ class Settings(BaseSettings):
     mlflow_tracking_username: Optional[str] = None
     mlflow_tracking_password: Optional[str] = None
 
+    # OCR Provider
+    ocr_provider:str = "mock"
+
     # Azure OCR
     azure_ocr_endpoint: Optional[str] = None
     azure_ocr_key: Optional[str] = None
+    
+    # OCR Space
+    ocr_space_api_key: Optional[str] = None
     
     # ENV
     env: str = "dev"  # default

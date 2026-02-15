@@ -4,46 +4,77 @@ from platform_shared.config.settings import Settings
 
 from document_iq_core.utils import get_logger
 from document_iq_platform_ocr.providers.factory import get_ocr_provider
+from document_iq_platform_ocr.models.ocr_result import OCRResult
+
 
 logger = get_logger("OCRService")
+
 settings = Settings()
+
 redis_client = get_redis_client()
-producer = create_producer(bootstrap_servers=settings.kafka_bootstrap_servers)
+
+producer = create_producer(
+    bootstrap_servers=settings.kafka_bootstrap_servers
+)
+
 ocr_provider = get_ocr_provider()
 
 
 def process_event(event: dict):
+
     request_id = event["request_id"]
     file_path = event["file_path"]
 
-    logger.info(f"OCR started for {request_id}")
+    logger.info(f"OCR started: {request_id}")
 
-    result = ocr_provider.extract(file_path)
+    try:
 
-    # Extract plain text
-    lines = []
-    for page in result["analyzeResult"]["readResults"]:
-        for line in page["lines"]:
-            lines.append(line["text"])
+        result: OCRResult = ocr_provider.extract(file_path)
 
-    extracted_text = "\n".join(lines)
+        if not result.pages:
+            raise RuntimeError("Empty OCR result")
 
-    redis_client.hset(
-        f"workflow:{request_id}",
-        mapping={
-            "ocr_status": "completed",
-            "ocr_text": extracted_text,
-            "current_stage": "ocr_completed",
-        },
-    )
+        all_lines = []
 
-    producer.send(
-        "document.ocr.completed",
-        {
-            "request_id": request_id,
-            "file_path": file_path,
-        },
-    )
-    producer.flush()
+        for page in result.pages:
+            all_lines.extend(page.lines)
 
-    logger.info(f"OCR completed for {request_id}")
+        extracted_text = "\n".join(all_lines)
+
+        redis_client.hset(
+            f"workflow:{request_id}",
+            mapping={
+                "ocr_status": "completed",
+                "ocr_text": extracted_text,
+                "current_stage": "ocr_completed",
+            },
+        )
+
+        producer.send(
+            "document.ocr.completed",
+            {
+                "request_id": request_id,
+                "file_path": file_path,
+            },
+        )
+
+        producer.flush()
+
+        logger.info(f"OCR completed: {request_id}")
+
+    except Exception as exc:
+
+        logger.exception(
+            f"OCR failed: {request_id} | {exc}"
+        )
+
+        redis_client.hset(
+            f"workflow:{request_id}",
+            mapping={
+                "ocr_status": "failed",
+                "ocr_error": str(exc),
+                "current_stage": "ocr_failed",
+            },
+        )
+
+        raise
