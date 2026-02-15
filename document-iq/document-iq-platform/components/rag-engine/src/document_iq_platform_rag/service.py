@@ -64,11 +64,18 @@ def process_event(event: dict):
         Context:
         {context}
 
-        Provide structured output:
-        - summary
-        - key insights (bullet points)
-        - document_type
-        - confidence (0 to 1)
+        Return ONLY a valid JSON object with this exact schema:
+        {{
+          "summary": "string",
+          "key_insights": ["string", "string"],
+          "document_type": "string",
+          "confidence": 0.0
+        }}
+
+        Rules:
+        - key_insights must be a JSON array of plain strings (no markdown bullets).
+        - confidence must be a number between 0 and 1.
+        - Do not include any text outside the JSON object.
         """
     )
 
@@ -77,10 +84,21 @@ def process_event(event: dict):
         context=context,
     )
 
-    # 🔹 LLM call
-    structured_response = llm.generate(final_prompt)
+    try:
+        structured_response = llm.generate(final_prompt)
+    except Exception as exc:
+        logger.exception(f"RAG failed for {request_id}: {exc}")
+        redis_client.hset(
+            f"workflow:{request_id}",
+            mapping={
+                "rag_status": "failed",
+                "current_stage": "rag_failed",
+                "overall_status": "failed",
+                "error": str(exc),
+            },
+        )
+        return
 
-    # 🔹 Save to Redis
     redis_client.hset(
         f"workflow:{request_id}",
         mapping={
