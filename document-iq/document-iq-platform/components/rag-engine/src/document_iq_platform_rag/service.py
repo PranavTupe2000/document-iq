@@ -1,3 +1,5 @@
+import ast
+
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -23,16 +25,24 @@ def process_event(event: dict):
     request_id = event["request_id"]
 
     workflow = redis_client.hgetall(f"workflow:{request_id}")
-
-    ocr_text = workflow.get("ocr_text")
     classification = workflow.get("classification_result", "unknown")
+    layout_data = workflow.get("layout_result")    
 
-    if not ocr_text:
-        logger.error("No OCR text found")
+    if not layout_data:
+        logger.error("Layout result missing")
         return
 
+    layout_json = ast.literal_eval(layout_data)
+
+    # Only use body + header blocks for RAG
+    relevant_text = "\n\n".join(
+        block["text"]
+        for block in layout_json["blocks"]
+        if block["type"] in ["header", "body"]
+    )
+
     # 🔹 Chunk text
-    chunks = text_splitter.split_text(ocr_text)
+    chunks = text_splitter.split_text(relevant_text)
 
     documents = [
         Document(
