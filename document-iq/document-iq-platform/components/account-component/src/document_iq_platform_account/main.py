@@ -1,8 +1,12 @@
 from fastapi import FastAPI
-from document_iq_platform_account.api import auth, organization, users
+from document_iq_platform_account.api import auth, organization, user
+import uvicorn
 
 app = FastAPI(title="DocumentIQ Account Component")
 
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(organization.router, prefix="/organizations", tags=["Organizations"])
-app.include_router(users.router, prefix="/users", tags=["Users"])
+app.include_router(auth.router)
+app.include_router(organization.router)
+app.include_router(user.router)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8001)

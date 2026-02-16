@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from document_iq_platform_account.schemas.auth import (
@@ -32,9 +33,15 @@ def get_db():
 # LOGIN
 # -------------------------
 
+
+
 @router.post("/login", response_model=TokenResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
-    token = login_user(db, request.email, request.password)
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    # OAuth2 form uses "username" field
+    token = login_user(db, form_data.username, form_data.password)
 
     if not token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
