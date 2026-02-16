@@ -1,4 +1,5 @@
 import ast
+import json
 
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
@@ -13,6 +14,7 @@ from document_iq_platform_rag.chunking.text_splitter import get_text_splitter
 from document_iq_platform_rag.llm_providers.factory import get_llm_provider
 
 logger = get_logger("RAGService")
+
 settings = Settings()
 redis_client = get_redis_client()
 producer = create_producer(bootstrap_servers=settings.kafka_bootstrap_servers)
@@ -26,7 +28,7 @@ def process_event(event: dict):
 
     workflow = redis_client.hgetall(f"workflow:{request_id}")
     classification = workflow.get("classification_result", "unknown")
-    layout_data = workflow.get("layout_result")    
+    layout_data = workflow.get("layout_result")
 
     if not layout_data:
         logger.error("Layout result missing")
@@ -34,33 +36,54 @@ def process_event(event: dict):
 
     layout_json = ast.literal_eval(layout_data)
 
-    # Only use body + header blocks for RAG
-    relevant_text = "\n\n".join(
-        block["text"]
-        for block in layout_json["blocks"]
-        if block["type"] in ["header", "body"]
-    )
+    documents = []
 
-    # 🔹 Chunk text
-    chunks = text_splitter.split_text(relevant_text)
+    # 🔹 Process block-by-block instead of merged text
+    for block in layout_json["blocks"]:
 
-    documents = [
-        Document(
-            page_content=chunk,
-            metadata={
-                "request_id": request_id,
-                "classification": classification,
-            },
-        )
-        for chunk in chunks
-    ]
+        # Ignore footer + metadata blocks
+        if block["type"] not in ["header", "body"]:
+            continue
+
+        chunks = text_splitter.split_text(block["text"])
+
+        for chunk in chunks:
+            documents.append(
+                Document(
+                    page_content=chunk,
+                    metadata={
+                        "request_id": request_id,
+                        "classification": classification,
+                        "block_type": block["type"],
+                        "page": block.get("page", 1),
+                        "bbox": json.dumps(block.get("bbox")),
+                        "position": block.get("position", 0),
+                    },
+                )
+            )
+
+    if not documents:
+        logger.error("No valid layout blocks found")
+        return
 
     # 🔹 Add to vector store
     vectorstore.add_documents(documents)
 
-    # 🔹 Retrieve relevant chunks
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-    retrieved_docs = retriever.invoke("Summarize this document")
+    # 🔹 Metadata-aware retriever
+    retriever = vectorstore.as_retriever(
+        search_kwargs={
+            "k": 4,
+            "filter": {
+                "request_id": request_id,
+                "block_type": {"$in": ["header", "body"]},
+            },
+        }
+    )
+
+    # 🔹 Dynamic query based on classification
+    query = f"Summarize this {classification} document and extract key insights."
+
+    retrieved_docs = retriever.invoke(query)
 
     context = "\n\n".join([d.page_content for d in retrieved_docs])
 
@@ -83,9 +106,9 @@ def process_event(event: dict):
         }}
 
         Rules:
-        - key_insights must be a JSON array of plain strings (no markdown bullets).
-        - confidence must be a number between 0 and 1.
-        - Do not include any text outside the JSON object.
+        - key_insights must be a JSON array of plain strings.
+        - confidence must be between 0 and 1.
+        - No extra text outside JSON.
         """
     )
 
@@ -125,4 +148,4 @@ def process_event(event: dict):
     )
     producer.flush()
 
-    logger.info(f"Production RAG completed for {request_id}")
+    logger.info(f"Enhanced RAG completed for {request_id}")

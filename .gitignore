@@ -4,3 +4,6 @@ doc-iq-venv/
 **/__pycache__
 dev/data/
 **/dist
+
+chroma_data/
+chroma.sqlite3
