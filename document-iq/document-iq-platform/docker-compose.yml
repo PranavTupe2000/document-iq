@@ -35,6 +35,29 @@ services:
     ports:
       - "6379:6379"
 
+  mysql:
+    image: mysql:8.0
+    container_name: documentiq-mysql
+    restart: always
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db-init:/docker-entrypoint-initdb.d
+
+    command: --default-authentication-plugin=mysql_native_password
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      
   aggregator:
     build:
       context: .
@@ -170,6 +193,24 @@ services:
     volumes:
       - rag_chroma_data:/srv/chroma_data
 
+  account-component:
+    build:
+      context: .
+      dockerfile: components/account-component/Dockerfile
+    environment:
+      DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCUMENT_IQ_REDIS_HOST: redis
+      DOCUMENT_IQ_REDIS_PORT: 6379
+      DOCUMENT_IQ_CHROMA_PERSIST_DIR: /srv/chroma_data
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mysql
+      - kafka
+
 volumes:
   ingestion-data:
   rag_chroma_data:
+  mysql_data:

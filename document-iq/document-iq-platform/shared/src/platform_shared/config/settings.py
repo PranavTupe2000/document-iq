@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     
     huggingface_embedding_model: Optional[str] = None
     
+    # SQL DB
+    database_url: Optional[str] = None
+    jwt_secret: Optional[str] = None
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    
 
     class Config:
         env_prefix = "DOCUMENT_IQ_"
