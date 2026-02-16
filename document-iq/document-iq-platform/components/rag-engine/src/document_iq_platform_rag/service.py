@@ -13,12 +13,13 @@ from document_iq_platform_rag.vectorstore.chroma_client import get_vectorstore
 from document_iq_platform_rag.chunking.text_splitter import get_text_splitter
 from document_iq_platform_rag.llm_providers.factory import get_llm_provider
 
+
 logger = get_logger("RAGService")
 
 settings = Settings()
 redis_client = get_redis_client()
 producer = create_producer(bootstrap_servers=settings.kafka_bootstrap_servers)
-vectorstore = get_vectorstore()
+
 text_splitter = get_text_splitter()
 llm = get_llm_provider()
 
@@ -36,13 +37,23 @@ def process_event(event: dict):
 
     layout_json = ast.literal_eval(layout_data)
 
+    # ==============================
+    # 1️⃣ Build Hierarchical Context
+    # ==============================
+    context = build_hierarchical_context(layout_json)
+    table_context = extract_table_insights(layout_json)
+
+    if not context.strip():
+        logger.error("No valid layout blocks found")
+        return
+
+    # ======================================================
+    # 2️⃣ Add Structured Blocks to GLOBAL Knowledge Base
+    # ======================================================
     documents = []
 
-    # 🔹 Process block-by-block instead of merged text
     for block in layout_json["blocks"]:
-
-        # Ignore footer + metadata blocks
-        if block["type"] not in ["header", "body"]:
+        if block["type"] not in ["header", "body", "table"]:
             continue
 
         chunks = text_splitter.split_text(block["text"])
@@ -61,60 +72,66 @@ def process_event(event: dict):
                     },
                 )
             )
+    global_vectorstore = get_vectorstore("document_knowledge_base")
+    
+    if documents:
+        global_vectorstore.add_documents(documents)
+        
+    # ======================================================
+    # Global Similarity Retrieval (Metadata Filtered)
+    # ======================================================
 
-    if not documents:
-        logger.error("No valid layout blocks found")
-        return
-
-    # 🔹 Add to vector store
-    vectorstore.add_documents(documents)
-
-    # 🔹 Metadata-aware retriever
-    retriever = vectorstore.as_retriever(
-        search_kwargs={
-            "k": 4,
-            "filter": {
-                "request_id": request_id,
-                "block_type": {"$in": ["header", "body"]},
-            },
-        }
+    similar_docs = global_vectorstore.similarity_search(
+        query=f"{classification} document summary",
+        k=3,
+        filter={
+            "classification": classification
+        },
     )
 
-    # 🔹 Dynamic query based on classification
-    query = f"Summarize this {classification} document and extract key insights."
+    global_context = "\n\n".join([doc.page_content for doc in similar_docs])
 
-    retrieved_docs = retriever.invoke(query)
 
-    context = "\n\n".join([d.page_content for d in retrieved_docs])
+    # ==============================
+    # 3️⃣ LLM Structured Generation
+    # ==============================
 
-    # 🔹 Prompt Template
     prompt = ChatPromptTemplate.from_template(
-        """
-        You are an intelligent document analyst.
+    """
+You are an intelligent document analyst.
 
-        Document Classification: {classification}
+Document Classification: {classification}
 
-        Context:
-        {context}
+Current Document Structure:
+{context}
 
-        Return ONLY a valid JSON object with this exact schema:
-        {{
-          "summary": "string",
-          "key_insights": ["string", "string"],
-          "document_type": "string",
-          "confidence": 0.0
-        }}
+Table Information:
+{table_context}
 
-        Rules:
-        - key_insights must be a JSON array of plain strings.
-        - confidence must be between 0 and 1.
-        - No extra text outside JSON.
-        """
+Similar Documents Knowledge:
+{global_context}
+
+Return ONLY a valid JSON object with this exact schema:
+{{
+"summary": "string",
+"key_insights": ["string", "string"],
+"document_type": "string",
+"confidence": 0.0
+}}
+
+Rules:
+- key_insights must be a JSON array of plain strings.
+- confidence must be between 0 and 1.
+- No extra text outside JSON.
+"""
     )
+
 
     final_prompt = prompt.format(
         classification=classification,
         context=context,
+        global_context=global_context,
+        table_context=table_context,
     )
 
     try:
@@ -148,4 +165,72 @@ def process_event(event: dict):
     )
     producer.flush()
 
-    logger.info(f"Enhanced RAG completed for {request_id}")
+    logger.info(f"Hierarchical RAG completed for {request_id}")
+
+
+# ======================================================
+# 🔹 Hierarchical PageIndex Context Builder
+# ======================================================
+
+def build_hierarchical_context(layout_json):
+    """
+    Builds structured context grouped by page and block type.
+    Deterministic PageIndex RAG (No vector retrieval).
+    """
+
+    pages = {}
+
+    for block in layout_json["blocks"]:
+        page = block.get("page", 1)
+        block_type = block["type"]
+
+        if page not in pages:
+            pages[page] = {
+                "header": [],
+                "body": [],
+                "table": [],
+                "footer": [],
+                "metadata": [],
+            }
+
+        pages[page].setdefault(block_type, []).append(block)
+
+    structured_context = []
+
+    for page_num in sorted(pages.keys()):
+        page_data = pages[page_num]
+
+        structured_context.append(f"\n=== Page {page_num} ===\n")
+
+        # Header first
+        for block in page_data.get("header", []):
+            structured_context.append(f"[HEADER]\n{block['text']}\n")
+
+        # Body sorted by position
+        for block in sorted(
+            page_data.get("body", []),
+            key=lambda x: x.get("position", 0),
+        ):
+            structured_context.append(f"[BODY]\n{block['text']}\n")
+
+        # Tables
+        for block in page_data.get("table", []):
+            structured_context.append(f"[TABLE]\n{block['text']}\n")
+
+    return "\n".join(structured_context)
+
+def extract_table_insights(layout_json):
+    """
+    Extract structured insights from table blocks.
+    """
+
+    tables = []
+
+    for block in layout_json["blocks"]:
+        if block["type"] == "table":
+            tables.append(block["text"])
+
+    if not tables:
+        return ""
+
+    return "\n\n".join([f"[TABLE DATA]\n{t}" for t in tables])
