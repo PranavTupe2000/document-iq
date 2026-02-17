@@ -97,13 +97,14 @@ def process_event(event: dict):
     # Global Similarity Retrieval (Metadata Filtered)
     # ======================================================
 
-    similar_docs = vectorstore.similarity_search(
-        query=f"{classification} document summary",
-        k=5,
-        filter={
-            "group_id": group_id
-        },
-    )
+    search_kwargs = {
+        "query": f"{classification} document summary",
+        "k": 5,
+    }
+    if group_id is not None:
+        search_kwargs["filter"] = {"group_id": group_id}
+
+    similar_docs = vectorstore.similarity_search(**search_kwargs)
 
     global_context = "\n\n".join([doc.page_content for doc in similar_docs])
 

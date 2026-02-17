@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     
     # Component URIs
     rag_engine_url: Optional[str] = None
-    account_url: Optional[str] = None
-    application_url: Optional[str] = None
+    account_component_url: Optional[str] = None
+    application_component_url: Optional[str] = None
 
     class Config:
         env_prefix = "DOCUMENT_IQ_"

@@ -51,12 +51,11 @@ def advanced_query(org_id: int, group_id: int, question: str):
     all_docs: List[Document] = []
 
     for q in query_variants:
-        retriever = vectorstore.as_retriever(
-            search_kwargs={
-                "k": 6,
-                "filter": {"group_id": group_id}
-            }
-        )
+        search_kwargs = {"k": 6}
+        if group_id is not None:
+            search_kwargs["filter"] = {"group_id": group_id}
+
+        retriever = vectorstore.as_retriever(search_kwargs=search_kwargs)
         docs = retriever.invoke(q)
         all_docs.extend(docs)
 

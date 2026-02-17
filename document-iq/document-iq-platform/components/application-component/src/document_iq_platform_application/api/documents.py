@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+import base64
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from document_iq_platform_application.database.session import SessionLocal
@@ -27,21 +30,35 @@ def get_db():
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
-def analyze_document(
-    request: AnalyzeRequest,
+async def analyze_document(
+    group_id: int = Form(...),
+    image: UploadFile = File(...),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # 1️⃣ Validate file type
+    if not image.content_type or not image.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image uploads are supported")
+
+    # 2️⃣ Read file content
+    content = await image.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty")
+
+    content_base64 = base64.b64encode(content).decode("utf-8")
+
+    # 3️⃣ Create document record
     document = Document(
         organization_id=current_user["org_id"],
-        group_id=request.group_id,
-        file_name=request.file_name,
+        group_id=group_id,
+        file_name=image.filename or "uploaded_image",
     )
 
     db.add(document)
     db.commit()
     db.refresh(document)
 
+    # 4️⃣ Create processing job
     job = ProcessingJob(
         document_id=document.id,
         status="pending",
@@ -50,13 +67,15 @@ def analyze_document(
     db.add(job)
     db.commit()
 
+    # 5️⃣ Publish ingestion event
     publish_ingestion_event(
         {
             "request_id": f"doc_{document.id}",
             "document_id": document.id,
-            "file_name": request.file_name,
-            "content_base64": request.content_base64,
+            "file_name": document.file_name,
+            "content_base64": content_base64,
             "organization_id": current_user["org_id"],
+            "requested_at": datetime.utcnow().isoformat(),
         }
     )
 

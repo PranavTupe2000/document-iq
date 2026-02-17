@@ -16,8 +16,7 @@ dependencies = [
     "bcrypt>=4.0.1,<4.1",
     "python-jose",
     "pymysql",
-    "pydantic[email]",
-    "document-iq-platform-shared"
+    "pydantic[email]"
 ]
 
 [build-system]

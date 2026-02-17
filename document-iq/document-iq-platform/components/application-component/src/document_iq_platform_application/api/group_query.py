@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from document_iq_platform_application.database.session import SessionLocal
-from document_iq_platform_account.security.dependencies import get_current_user
+from document_iq_platform_application.security.dependencies import get_current_user
 from document_iq_platform_application.services.query_service import query_group
 
 router = APIRouter(prefix="/groups", tags=["Group Query"])

@@ -101,6 +101,8 @@ services:
       - "8000:8000"
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCUMENT_IQ_ACCOUNT_COMPONENT_URL: http://account-component:8001
+      DOCUMENT_IQ_APPLICATION_COMPONENT_URL: http://application-component:8002
 
   ingestion-worker:
     build:

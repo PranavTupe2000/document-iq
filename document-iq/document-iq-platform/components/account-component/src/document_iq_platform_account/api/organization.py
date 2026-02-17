@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from document_iq_platform_account.database.session import SessionLocal
@@ -6,6 +7,10 @@ from document_iq_platform_account.models.organization import Organization
 from document_iq_platform_account.security.rbac import require_role
 
 router = APIRouter(prefix="/organizations", tags=["Organizations"])
+
+
+class OrganizationUpdateRequest(BaseModel):
+    name: str
 
 
 def get_db():
@@ -41,7 +46,7 @@ def get_my_organization(
 
 @router.put("/me")
 def update_my_organization(
-    name: str,
+    request: OrganizationUpdateRequest,
     current_user=Depends(require_role("ORG_ADMIN")),
     db: Session = Depends(get_db),
 ):
@@ -52,7 +57,7 @@ def update_my_organization(
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
 
-    org.name = name
+    org.name = request.name
     db.commit()
     db.refresh(org)
 
