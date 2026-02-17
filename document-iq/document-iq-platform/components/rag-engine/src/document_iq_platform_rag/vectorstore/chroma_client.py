@@ -8,11 +8,11 @@ EMBEDDING_MODEL = settings.huggingface_embedding_model
 PERSIST_DIR = settings.chroma_persist_dir
 
 
-def get_vectorstore(collection_name: str):
+def get_vectorstore(org_id: int):
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
     return Chroma(
-        collection_name=collection_name,
+        collection_name=f"org_{org_id}_kb",
         embedding_function=embeddings,
         persist_directory=PERSIST_DIR,
     )

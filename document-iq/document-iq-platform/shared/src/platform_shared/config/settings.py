@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     
     # Component URIs
+    rag_engine_url: Optional[str] = None
     account_url: Optional[str] = None
     application_url: Optional[str] = None
 

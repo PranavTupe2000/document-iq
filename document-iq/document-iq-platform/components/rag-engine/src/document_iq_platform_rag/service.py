@@ -28,6 +28,9 @@ def process_event(event: dict):
     request_id = event["request_id"]
 
     workflow = redis_client.hgetall(f"workflow:{request_id}")
+    org_id = workflow.get("organization_id")
+    group_id = workflow.get("group_id")
+    document_id = workflow.get("document_id")
     classification = workflow.get("classification_result", "unknown")
     layout_data = workflow.get("layout_result")
 
@@ -64,6 +67,9 @@ def process_event(event: dict):
                     page_content=chunk,
                     metadata={
                         "request_id": request_id,
+                        "organization_id": org_id,
+                        "group_id": group_id,
+                        "document_id": document_id,
                         "classification": classification,
                         "block_type": block["type"],
                         "page": block.get("page", 1),
@@ -72,20 +78,30 @@ def process_event(event: dict):
                     },
                 )
             )
-    global_vectorstore = get_vectorstore("document_knowledge_base")
+    vectorstore = get_vectorstore(org_id)
     
     if documents:
-        global_vectorstore.add_documents(documents)
+        vectorstore.add_documents(documents)
+        
+    # TODO: Remove this
+    # retriever = vectorstore.as_retriever(
+    #     search_kwargs={
+    #         "k": 5,
+    #         "filter": {
+                
+    #         }
+    #     }
+    # )
         
     # ======================================================
     # Global Similarity Retrieval (Metadata Filtered)
     # ======================================================
 
-    similar_docs = global_vectorstore.similarity_search(
+    similar_docs = vectorstore.similarity_search(
         query=f"{classification} document summary",
-        k=3,
+        k=5,
         filter={
-            "classification": classification
+            "group_id": group_id
         },
     )
 
