@@ -13,8 +13,13 @@ from document_iq_platform_aggregator.consumers.ocr_completed import (
     consume_ocr_completed
 )
 
+from document_iq_platform_aggregator.consumers.rag_completed import (
+    consume_rag_completed
+)
+
 if __name__ == "__main__":
     Thread(target=consume_ingestion_completed).start()
     Thread(target=consume_classification_completed).start()
     Thread(target=consume_layout_completed).start()
     Thread(target=consume_ocr_completed).start()
+    Thread(target=consume_rag_completed).start()

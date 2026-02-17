@@ -9,4 +9,5 @@ class DocumentAnalyzeRequest(BaseModel):
 
 class DocumentAnalyzeResponse(BaseModel):
     request_id: str
+    document_id: str
     status: str

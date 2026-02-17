@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     
+    # Component URIs
+    account_url: Optional[str] = None
+    application_url: Optional[str] = None
 
     class Config:
         env_prefix = "DOCUMENT_IQ_"

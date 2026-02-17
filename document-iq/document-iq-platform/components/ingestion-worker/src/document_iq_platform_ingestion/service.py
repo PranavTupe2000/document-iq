@@ -29,6 +29,7 @@ def process_event(event: dict):
             "ingestion_status": "completed",
             "file_path": file_path,
             "current_stage": "ingestion_completed",
+            "document_id": event["document_id"],
         },
     )
 
