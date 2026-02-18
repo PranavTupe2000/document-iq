@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from document_iq_platform_application.database.session import SessionLocal
 from document_iq_platform_application.security.dependencies import get_current_user
@@ -22,9 +22,16 @@ def group_query(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    query_text = (question or {}).get("question") or (question or {}).get("query")
+    if not isinstance(query_text, str) or not query_text.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Request body must include a non-empty 'question' field",
+        )
+
     return query_group(
         db=db,
         user=current_user,
         group_id=group_id,
-        question=question["query"],
+        question=query_text.strip(),
     )

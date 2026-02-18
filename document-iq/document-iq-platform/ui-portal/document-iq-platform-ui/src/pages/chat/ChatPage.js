@@ -351,8 +351,10 @@ export default function ChatPage() {
   const location = useLocation();
 
   // Pre-select group if navigated from Groups page
-  const preGroup = location.state?.groupId
-    ? { id: location.state.groupId, name: location.state.groupName }
+  const preGroupId = location.state?.groupId ?? location.state?.group_id ?? location.state?.id;
+  const preGroupName = location.state?.groupName ?? location.state?.name;
+  const preGroup = preGroupId
+    ? { id: preGroupId, group_id: preGroupId, name: preGroupName }
     : null;
 
   const [groups,      setGroups]      = useState([]);
@@ -395,6 +397,18 @@ export default function ChatPage() {
     return id;
   }, []);
 
+  const getApiErrorMessage = useCallback((err) => {
+    const detail = err?.response?.data?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      const first = detail[0];
+      if (typeof first === 'string') return first;
+      if (first?.msg) return first.msg;
+    }
+    if (typeof err?.message === 'string') return err.message;
+    return 'Something went wrong. Please try again.';
+  }, []);
+
   const updateMessage = useCallback((id, updates) => {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
   }, []);
@@ -403,6 +417,11 @@ export default function ChatPage() {
     const q = (question || input).trim();
     if (!q || loading) return;
     if (!selected) { setError('Please select a group first.'); return; }
+    const selectedGroupId = selected?.id ?? selected?.group_id;
+    if (!selectedGroupId) {
+      setError('Selected group is invalid. Please re-select a group.');
+      return;
+    }
 
     setInput('');
     setError('');
@@ -415,7 +434,7 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await queryGroupApi(selected.id, q);
+      const res = await queryGroupApi(selectedGroupId, q);
       const answer = res.data.answer || 'No answer returned.';
 
       // Simulate slight delay for better UX feel
@@ -423,7 +442,7 @@ export default function ChatPage() {
       updateMessage(aiId, { content: answer, isTyping: false });
     } catch (err) {
       updateMessage(aiId, {
-        content: err.response?.data?.detail || 'Something went wrong. Please try again.',
+        content: getApiErrorMessage(err),
         isTyping: false,
         isError: true
       });
@@ -431,7 +450,7 @@ export default function ChatPage() {
       setLoading(false);
       inputRef.current?.focus();
     }
-  }, [input, loading, selected, addMessage, updateMessage]);
+  }, [input, loading, selected, addMessage, updateMessage, getApiErrorMessage]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

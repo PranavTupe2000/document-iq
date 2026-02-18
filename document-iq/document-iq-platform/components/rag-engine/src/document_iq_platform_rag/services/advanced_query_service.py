@@ -59,12 +59,36 @@ def advanced_query(org_id: int, group_id: int, question: str):
         docs = retriever.invoke(q)
         all_docs.extend(docs)
 
+    if not all_docs:
+        fallback = (
+            "I could not find relevant indexed content for this group yet. "
+            "Please ensure documents are fully processed and try again."
+        )
+        redis_client.set(cache_key, fallback, ex=300)
+        return {
+            "answer": fallback,
+            "cached": False,
+            "retrieved_chunks": 0,
+        }
+
     # =====================================================
     # 2️⃣ Vector Compression / Deduplication
     # =====================================================
     # Remove exact duplicates first
     unique_docs = {doc.page_content: doc for doc in all_docs}.values()
     candidate_docs = list(unique_docs)
+
+    if not candidate_docs:
+        fallback = (
+            "I could not find relevant indexed content for this group yet. "
+            "Please ensure documents are fully processed and try again."
+        )
+        redis_client.set(cache_key, fallback, ex=300)
+        return {
+            "answer": fallback,
+            "cached": False,
+            "retrieved_chunks": 0,
+        }
 
     # Optional semantic deduplication
     embeddings = vectorstore._embedding_function.embed_documents(
@@ -91,10 +115,33 @@ def advanced_query(org_id: int, group_id: int, question: str):
 
     candidate_docs = filtered_docs
 
+    if not candidate_docs:
+        fallback = (
+            "I could not find relevant indexed content for this group yet. "
+            "Please ensure documents are fully processed and try again."
+        )
+        redis_client.set(cache_key, fallback, ex=300)
+        return {
+            "answer": fallback,
+            "cached": False,
+            "retrieved_chunks": 0,
+        }
+
     # =====================================================
     # 3️⃣ Cross-Encoder Reranking
     # =====================================================
     pairs = [(question, doc.page_content) for doc in candidate_docs]
+    if not pairs:
+        fallback = (
+            "I could not find relevant indexed content for this group yet. "
+            "Please ensure documents are fully processed and try again."
+        )
+        redis_client.set(cache_key, fallback, ex=300)
+        return {
+            "answer": fallback,
+            "cached": False,
+            "retrieved_chunks": 0,
+        }
     scores = reranker.predict(pairs)
 
     ranked = sorted(

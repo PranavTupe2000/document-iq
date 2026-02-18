@@ -64,6 +64,6 @@ export const getDocResultApi      = (id)         => api.get(`/documents/${id}/re
 
 // ─── RAG / Query ──────────────────────────────────────────
 export const queryGroupApi = (groupId, question) =>
-  api.post(`/groups/${groupId}/query`, { question });
+  api.post(`/groups/${groupId}/query`, { group_id: groupId, question });
 
 export default api;

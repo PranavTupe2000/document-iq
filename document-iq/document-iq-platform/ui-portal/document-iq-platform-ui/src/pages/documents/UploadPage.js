@@ -15,13 +15,16 @@ function formatSize(bytes) {
 }
 
 // ── Convert file to base64 ────────────────────────────────
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+function getErrorMessage(err) {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0];
+    if (typeof first === 'string') return first;
+    if (first?.msg) return first.msg;
+  }
+  if (typeof err?.message === 'string') return err.message;
+  return 'Upload failed. Please try again.';
 }
 
 // ── Group Selector ─────────────────────────────────────────
@@ -417,16 +420,15 @@ export default function UploadPage() {
     setLoading(true);
 
     try {
-      const base64 = await fileToBase64(file);
-      const res = await analyzeDocumentApi({
-        group_id:       groupId,
-        file_name:      file.name,
-        content_base64: base64
-      });
+      const formData = new FormData();
+      formData.append('group_id', String(groupId));
+      formData.append('image', file);
+
+      const res = await analyzeDocumentApi(formData);
       setDocId(res.data.document_id);
       setSubmitted(true);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Upload failed. Please try again.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

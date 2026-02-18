@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from document_iq_platform_rag.services.advanced_query_service import advanced_query
 
@@ -11,8 +11,11 @@ class QueryRequest(BaseModel):
 
 @router.post("/query")
 def query(request: QueryRequest):
-    return advanced_query(
-        org_id=request.org_id,
-        group_id=request.group_id,
-        question=request.question
-    )
+    try:
+        return advanced_query(
+            org_id=request.org_id,
+            group_id=request.group_id,
+            question=request.question
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"RAG query failed: {exc}") from exc
