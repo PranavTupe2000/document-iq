@@ -7,3 +7,5 @@ dev/data/
 
 chroma_data/
 chroma.sqlite3
+
+**/node_modules
