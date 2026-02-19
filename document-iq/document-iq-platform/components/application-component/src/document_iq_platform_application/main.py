@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from document_iq_platform_application.api import (
     groups,
     documents,
+    document_crud,
     group_query,
 )
 from document_iq_platform_application.consumers.processing_completed import start_consumer
@@ -15,6 +16,7 @@ app = FastAPI(title="DocumentIQ Application Component")
 
 app.include_router(groups.router)
 app.include_router(documents.router)
+app.include_router(document_crud.router)
 app.include_router(group_query.router)
 
 # ------------------------------

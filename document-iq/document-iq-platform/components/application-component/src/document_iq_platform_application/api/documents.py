@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -17,7 +18,11 @@ from document_iq_platform_application.security.dependencies import (
 from document_iq_platform_application.messaging.producer import (
     publish_ingestion_event,
 )
+from platform_shared.config.settings import Settings
+import os
 
+settings = Settings()
+UPLOAD_DIR = settings.uploaded_file_path
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 
@@ -47,13 +52,24 @@ async def analyze_document(
 
     content_base64 = base64.b64encode(content).decode("utf-8")
 
+    # Store file physically
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    file_extension = image.filename.split(".")[-1]
+    file_name = f"{uuid.uuid4().hex}.{file_extension}"
+    file_path = os.path.join(UPLOAD_DIR, file_name)
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
     # 3️⃣ Create document record
     document = Document(
         organization_id=current_user["org_id"],
         group_id=group_id,
-        file_name=image.filename or "uploaded_image",
+        file_name=image.filename,
+        file_path=file_path,
+        status="processing",
     )
-
     db.add(document)
     db.commit()
     db.refresh(document)

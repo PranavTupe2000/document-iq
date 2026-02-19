@@ -11,6 +11,8 @@ class Document(Base):
     organization_id = Column(Integer, nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"))
     file_name = Column(String(255))
+    file_path = Column(String(500), nullable=False)
+    status = Column(String(50), default="processing")
     classification = Column(String(100))
     layout_result = Column(Text)
     rag_result = Column(Text)

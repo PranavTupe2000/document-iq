@@ -14,7 +14,10 @@ class Settings(BaseSettings):
     mlflow_tracking_uri: Optional[str] = None
     mlflow_tracking_username: Optional[str] = None
     mlflow_tracking_password: Optional[str] = None
-
+    
+    # Uploaded file path
+    uploaded_file_path: str = "uploaded_documents"  # default
+    
     # OCR Provider
     ocr_provider:str = "mock"
 
