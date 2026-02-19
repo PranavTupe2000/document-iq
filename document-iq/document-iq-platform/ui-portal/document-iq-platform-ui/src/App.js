@@ -14,6 +14,7 @@ import UsersPage     from './pages/admin/UsersPage';
 import SettingsPage  from './pages/settings/SettingsPage';
 import ProfilePage   from './pages/settings/ProfilePage';
 import NotFoundPage  from './pages/NotFoundPage';
+import DocumentsPage from './pages/documents/DocumentsPage';
 
 // ── Route Guards ───────────────────────────────────────────
 function ProtectedRoute({ children }) {
@@ -96,7 +97,8 @@ function App() {
         <Route path="/profile"   element={<ProtectedRoute><ProfilePage   /></ProtectedRoute>} />
         <Route path="/documents/:documentId/status" element={<ProtectedRoute><StatusPage /></ProtectedRoute>} />
         <Route path="/documents/:documentId/result" element={<ProtectedRoute><ResultPage /></ProtectedRoute>} />
-
+        <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
+        
         {/* Admin only */}
         <Route path="/admin/users" element={<AdminRoute><UsersPage    /></AdminRoute>} />
         <Route path="/settings"    element={<AdminRoute><SettingsPage /></AdminRoute>} />

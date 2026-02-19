@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 const NAV_MAIN = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/groups',    icon: FolderOpen,      label: 'Groups'    },
+  { to: '/documents', icon: FileText,        label: 'Documents' },
   { to: '/upload',    icon: Upload,          label: 'Upload'    },
   { to: '/chat',      icon: MessageSquare,   label: 'AI Chat'   },
 ];

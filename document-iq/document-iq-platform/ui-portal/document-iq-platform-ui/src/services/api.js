@@ -61,6 +61,10 @@ export const deleteGroupApi = (id)   => api.delete(`/groups/${id}`);
 export const analyzeDocumentApi   = (data)       => api.post('/documents/analyze', data);
 export const getDocStatusApi      = (id)         => api.get(`/documents/${id}/status`);
 export const getDocResultApi      = (id)         => api.get(`/documents/${id}/result`);
+export const getDocumentApi      = (id)      => api.get(`/documents/${id}`);
+export const deleteDocumentApi   = (id)      => api.delete(`/documents/${id}`);
+export const getDocsByGroupApi   = (groupId) => api.get(`/documents/group/${groupId}`);
+export const downloadDocumentApi = (id)      => api.get(`/documents/${id}/download`, { responseType: 'blob' });
 
 // ─── RAG / Query ──────────────────────────────────────────
 export const queryGroupApi = (groupId, question) =>

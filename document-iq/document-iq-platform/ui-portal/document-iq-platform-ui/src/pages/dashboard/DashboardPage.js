@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   FileText, FolderOpen, Users, CheckCircle,
   Clock, AlertCircle, Upload, ArrowRight,
-  MessageSquare, TrendingUp
+  MessageSquare, TrendingUp, Loader
 } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
 import StatCard from '../../components/common/StatCard';
-import { listGroupsApi } from '../../services/api';
+import { listGroupsApi, getDocsByGroupApi } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 // ── Helpers ────────────────────────────────────────────────
@@ -39,15 +39,6 @@ function SectionHeader({ title, actionLabel, onAction }) {
     </div>
   );
 }
-
-// ── Mock recent docs (replace with API when available) ─────
-const MOCK_DOCS = [
-  { id: 1, name: 'Q3_Financial_Report.pdf',    group: 'Finance',    status: 'completed',  date: '2 hours ago' },
-  { id: 2, name: 'Product_Roadmap_2025.pdf',   group: 'Strategy',   status: 'processing', date: '4 hours ago' },
-  { id: 3, name: 'Employee_Handbook_v3.pdf',   group: 'HR Docs',    status: 'completed',  date: 'Yesterday'   },
-  { id: 4, name: 'Legal_Contract_Draft.pdf',   group: 'Legal',      status: 'failed',     date: 'Yesterday'   },
-  { id: 5, name: 'Market_Analysis_Oct.pdf',    group: 'Strategy',   status: 'completed',  date: '2 days ago'  },
-];
 
 // ── Quick Action Card ──────────────────────────────────────
 function QuickAction({ icon: Icon, label, desc, onClick, color }) {
@@ -91,20 +82,34 @@ function QuickAction({ icon: Icon, label, desc, onClick, color }) {
 // ── Main Component ─────────────────────────────────────────
 export default function DashboardPage() {
   const navigate = useNavigate();
-  
   const { user: profile } = useAuth();
   const [groups,  setGroups]  = useState([]);
+  const [docs,    setDocs]    = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     listGroupsApi()
-      .then(r => setGroups(r.data))
+      .then(async (gRes) => {
+        setGroups(gRes.data);
+        // Fetch docs from all groups in parallel
+        const allDocs = await Promise.all(
+          gRes.data.map(g =>
+            getDocsByGroupApi(g.id)
+              .then(r => r.data.map(d => ({ ...d, group_name: g.name })))
+              .catch(() => [])
+          )
+        );
+        // Flatten, sort newest first, take top 5
+        const flat = allDocs.flat().sort((a, b) => b.id - a.id).slice(0, 5);
+        setDocs(flat);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const completedDocs = MOCK_DOCS.filter(d => d.status === 'completed').length;
-  const processingDocs = MOCK_DOCS.filter(d => d.status === 'processing').length;
+  const totalDocs = docs.length
+  const completedDocs  = docs.filter(d => d.overall_status === 'completed').length;
+  const processingDocs = docs.filter(d => d.overall_status === 'processing').length;
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -164,7 +169,7 @@ export default function DashboardPage() {
         <StatCard
           icon={FileText}
           label="Total Documents"
-          value={MOCK_DOCS.length}
+          value={totalDocs}
           sub="Across all groups"
           color="var(--color-primary)"
         />
@@ -231,69 +236,88 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_DOCS.map((doc, i) => (
-                  <tr
-                    key={doc.id}
-                    style={{
-                      borderBottom: i < MOCK_DOCS.length - 1 ? '1px solid var(--color-border)' : 'none',
-                      transition: 'background 150ms'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td style={{ padding: '14px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                          width: 32, height: 32,
-                          background: 'var(--color-bg)',
-                          borderRadius: '6px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0,
-                          border: '1px solid var(--color-border)'
-                        }}>
-                          <FileText size={15} style={{ color: 'var(--color-primary)' }} />
-                        </div>
-                        <span style={{
-                          fontSize: '14px', fontWeight: 500,
-                          color: 'var(--color-text-primary)',
-                          maxWidth: '200px',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                        }}>
-                          {doc.name}
-                        </span>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '40px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                        color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+                        <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        Loading documents...
                       </div>
                     </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <span style={{
-                        fontSize: '13px',
-                        color: 'var(--color-text-secondary)',
-                        background: 'var(--color-bg)',
-                        padding: '2px 8px',
-                        borderRadius: '999px',
-                        border: '1px solid var(--color-border)'
-                      }}>
-                        {doc.group}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <StatusBadge status={doc.status} />
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                        {doc.date}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <button
-                        className="btn btn-tertiary btn-sm"
-                        onClick={() => navigate(`/documents/${doc.id}/result`)}
-                        style={{ fontSize: '13px' }}
-                      >
-                        View
-                      </button>
+                  </tr>
+                ) : docs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '48px', textAlign: 'center' }}>
+                      <FileText size={28} style={{ color: 'var(--color-border)', marginBottom: '10px' }} />
+                      <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                        No documents yet. Upload your first document to get started.
+                      </p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  docs.map((doc, i) => (
+                    <tr
+                      key={doc.id}
+                      style={{
+                        borderBottom: i < docs.length - 1 ? '1px solid var(--color-border)' : 'none',
+                        transition: 'background 150ms'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--color-bg)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <td style={{ padding: '14px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            width: 32, height: 32, background: 'var(--color-bg)',
+                            borderRadius: '6px', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', flexShrink: 0,
+                            border: '1px solid var(--color-border)'
+                          }}>
+                            <FileText size={15} style={{ color: 'var(--color-primary)' }} />
+                          </div>
+                          <span style={{
+                            fontSize: '14px', fontWeight: 500,
+                            color: 'var(--color-text-primary)',
+                            maxWidth: '200px', overflow: 'hidden',
+                            textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                          }}>
+                            {doc.file_name || doc.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <span style={{
+                          fontSize: '13px', color: 'var(--color-text-secondary)',
+                          background: 'var(--color-bg)', padding: '2px 8px',
+                          borderRadius: '999px', border: '1px solid var(--color-border)'
+                        }}>
+                          {doc.group_name || `Group #${doc.group_id}`}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <StatusBadge status={doc.overall_status || doc.status} />
+                      </td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                          {doc.created_at ? new Date(doc.created_at).toLocaleDateString() : '—'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <button
+                          className="btn btn-tertiary btn-sm"
+                          onClick={() => navigate(
+                            (doc.overall_status || doc.status) === 'completed'
+                              ? `/documents/${doc.id}/result`
+                              : `/documents/${doc.id}/status`
+                          )}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -427,6 +451,9 @@ export default function DashboardPage() {
 
         </div>
       </div>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </AppLayout>
   );
 }
