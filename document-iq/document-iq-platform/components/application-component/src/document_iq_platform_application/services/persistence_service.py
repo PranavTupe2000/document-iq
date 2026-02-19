@@ -17,6 +17,7 @@ def persist_processing_result(event: dict):
         document.classification = event["classification"]
         document.layout_result = event["layout_result"]
         document.rag_result = event["rag_result"]
+        document.status = "completed"
 
         job = db.query(ProcessingJob).filter(
             ProcessingJob.document_id == event["document_id"]

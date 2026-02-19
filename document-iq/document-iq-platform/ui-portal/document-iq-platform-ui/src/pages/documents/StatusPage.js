@@ -44,13 +44,22 @@ const STAGES = [
 
 // ── Stage status resolver ──────────────────────────────────
 function resolveStageStatus(stageKey, currentStage, overallStatus) {
-  const order = STAGES.map(s => s.key);
+  // If fully completed, all stages are green
+  if (overallStatus === 'completed') return 'completed';
+
+  const order      = STAGES.map(s => s.key);
   const currentIdx = order.indexOf(currentStage);
   const stageIdx   = order.indexOf(stageKey);
 
-  if (overallStatus === 'failed' && stageIdx === currentIdx) return 'failed';
-  if (overallStatus === 'completed') return 'completed';
-  if (stageIdx < currentIdx)  return 'completed';
+  // If failed, mark current stage red, prior stages green, rest pending
+  if (overallStatus === 'failed') {
+    if (stageIdx < currentIdx)  return 'completed';
+    if (stageIdx === currentIdx) return 'failed';
+    return 'pending';
+  }
+
+  // Processing
+  if (stageIdx < currentIdx)   return 'completed';
   if (stageIdx === currentIdx) return 'active';
   return 'pending';
 }
@@ -170,10 +179,12 @@ function StageRow({ stage, status, isLast }) {
 function StatusBanner({ overallStatus, currentStage, docId }) {
   const configs = {
     processing: {
-      bg:     'var(--color-primary)',
-      icon:   <Loader size={22} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />,
-      title:  'Processing your document...',
-      sub:    `Currently running: ${STAGES.find(s => s.key === currentStage)?.label || currentStage}`,
+          bg:     'var(--color-primary)',
+          icon:   <Loader size={22} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />,
+          title:  'Processing your document...',
+          sub:    currentStage
+            ? `Currently running: ${STAGES.find(s => s.key === currentStage)?.label || currentStage}`
+            : 'Pipeline is running...',
     },
     completed: {
       bg:    'var(--color-success)',
@@ -182,10 +193,12 @@ function StatusBanner({ overallStatus, currentStage, docId }) {
       sub:   'Your document is ready. View the full analysis results.',
     },
     failed: {
-      bg:    'var(--color-error)',
-      icon:  <AlertCircle size={22} color="#fff" />,
-      title: 'Processing Failed',
-      sub:   `Failed at stage: ${STAGES.find(s => s.key === currentStage)?.label || currentStage}`,
+          bg:    'var(--color-error)',
+          icon:  <AlertCircle size={22} color="#fff" />,
+          title: 'Processing Failed',
+          sub:   currentStage
+            ? `Failed at stage: ${STAGES.find(s => s.key === currentStage)?.label || currentStage}`
+            : 'Processing could not be completed.',
     }
   };
 
@@ -245,11 +258,12 @@ function StatusBanner({ overallStatus, currentStage, docId }) {
 // ── Progress Bar ───────────────────────────────────────────
 function ProgressBar({ currentStage, overallStatus }) {
   const order = STAGES.map(s => s.key);
-  const idx   = order.indexOf(currentStage);
-  const pct   = overallStatus === 'completed'
+  const idx   = Math.max(0, order.indexOf(currentStage)); // never -1
+
+  const pct = overallStatus === 'completed'
     ? 100
     : overallStatus === 'failed'
-    ? Math.round(((idx) / STAGES.length) * 100)
+    ? Math.max(5, Math.round((idx / STAGES.length) * 100))
     : Math.round(((idx + 0.5) / STAGES.length) * 100);
 
   return (
@@ -300,23 +314,38 @@ export default function StatusPage() {
   const intervalRef = useRef(null);
 
   const fetchStatus = useCallback(async () => {
-    try {
-      const res = await getDocStatusApi(documentId);
-      setStatus(res.data);
-      setLastUpdated(new Date());
-      setError('');
+      try {
+        const res = await getDocStatusApi(documentId);
+        const raw = res.data;
 
-      // Stop polling when done
-      if (res.data.overall_status === 'completed' || res.data.overall_status === 'failed') {
-        clearInterval(intervalRef.current);
+        // Normalize: handle both response shapes
+        // Shape A (new): { document_id, status }
+        // Shape B (old): { document_id, current_stage, overall_status }
+        const normalized = {
+          document_id:    raw.document_id,
+          overall_status: raw.overall_status || raw.status,
+          current_stage:  raw.current_stage  || (
+            // If no stage info, infer from status
+            raw.status === 'completed' ? 'rag' :
+            raw.status === 'failed'    ? 'ingestion' :
+                                        'ingestion'
+          )
+        };
+
+        setStatus(normalized);
+        setLastUpdated(new Date());
+        setError('');
+
+        if (normalized.overall_status === 'completed' || normalized.overall_status === 'failed') {
+          clearInterval(intervalRef.current);
+        }
+      } catch (err) {
+        setError('Failed to fetch document status.');
+      } finally {
+        setLoading(false);
+        setPollCount(p => p + 1);
       }
-    } catch (err) {
-      setError('Failed to fetch document status.');
-    } finally {
-      setLoading(false);
-      setPollCount(p => p + 1);
-    }
-  }, [documentId]);
+    }, [documentId]);
 
   useEffect(() => {
     fetchStatus();

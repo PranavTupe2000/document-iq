@@ -24,13 +24,41 @@ text_splitter = get_text_splitter()
 llm = get_llm_provider()
 
 
+def _parse_int_field(data: dict, key: str, required: bool = False):
+    value = data.get(key)
+    if value is None:
+        if required:
+            raise ValueError(f"Missing required workflow field: {key}")
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid integer value for workflow field {key}: {value}"
+        ) from exc
+
+
 def process_event(event: dict):
     request_id = event["request_id"]
 
     workflow = redis_client.hgetall(f"workflow:{request_id}")
-    org_id = workflow.get("organization_id")
-    group_id = workflow.get("group_id")
-    document_id = workflow.get("document_id")
+    try:
+        org_id = _parse_int_field(workflow, "organization_id", required=True)
+        group_id = _parse_int_field(workflow, "group_id")
+        document_id = _parse_int_field(workflow, "document_id")
+    except ValueError as exc:
+        logger.error(f"Invalid workflow data for {request_id}: {exc}")
+        redis_client.hset(
+            f"workflow:{request_id}",
+            mapping={
+                "rag_status": "failed",
+                "current_stage": "rag_failed",
+                "overall_status": "failed",
+                "error": str(exc),
+            },
+        )
+        return
+
     classification = workflow.get("classification_result", "unknown")
     layout_data = workflow.get("layout_result")
 
@@ -83,6 +111,9 @@ def process_event(event: dict):
     if documents:
         vectorstore.add_documents(documents)
         
+        count = vectorstore._collection.count()
+        logger.info(f"Chroma docs after insert: {count}")
+        
     # TODO: Remove this
     # retriever = vectorstore.as_retriever(
     #     search_kwargs={
@@ -104,7 +135,11 @@ def process_event(event: dict):
     if group_id is not None:
         search_kwargs["filter"] = {"group_id": group_id}
 
-    similar_docs = vectorstore.similarity_search(**search_kwargs)
+    similar_docs = vectorstore.similarity_search(
+            search_kwargs["query"],
+            k=search_kwargs["k"],
+            filter=search_kwargs.get("filter"),
+        )
 
     global_context = "\n\n".join([doc.page_content for doc in similar_docs])
 

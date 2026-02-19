@@ -91,6 +91,7 @@ async def analyze_document(
             "file_name": document.file_name,
             "content_base64": content_base64,
             "organization_id": current_user["org_id"],
+            "group_id": group_id,
             "requested_at": datetime.utcnow().isoformat(),
         }
     )

@@ -149,7 +149,13 @@ function PreviewModal({ doc, onClose }) {
               { label: 'Document ID',  value: `#${doc.id}`                                          },
               { label: 'Status',       value: <StatusBadge status={doc.overall_status || doc.status} /> },
               { label: 'Group',        value: doc.group_name || `Group #${doc.group_id}`             },
-              { label: 'Uploaded',     value: doc.created_at ? new Date(doc.created_at).toLocaleString() : '—' },
+              {
+                label: 'Uploaded',
+                value: (() => {
+                  const d = doc.created_at || doc.uploaded_at || doc.timestamp;
+                  return d ? new Date(d).toLocaleString() : 'Not available';
+                })()
+              },
             ].map(({ label, value }) => (
               <div key={label} style={{
                 background: 'var(--color-bg)',
@@ -178,8 +184,9 @@ function PreviewModal({ doc, onClose }) {
               Pipeline Stages
             </p>
             {['Ingestion', 'OCR', 'Layout', 'Classification', 'RAG'].map((stage, i) => {
-              const status = doc.overall_status;
-              const done = status === 'completed';
+              const docStatus = doc.overall_status || doc.status;
+              const done = docStatus === 'completed';
+              const isProcessing = docStatus === 'processing' || docStatus === 'accepted';
               return (
                 <div key={stage} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -190,13 +197,22 @@ function PreviewModal({ doc, onClose }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <div style={{
                       width: 7, height: 7, borderRadius: '50%',
-                      background: done ? 'var(--color-success)' : 'var(--color-border)'
+                      background: done
+                        ? 'var(--color-success)'
+                        : isProcessing
+                        ? 'var(--color-warning)'
+                        : 'var(--color-border)',
+                      animation: isProcessing && i === 0 ? 'pulse 1.5s infinite' : 'none'
                     }} />
                     <span style={{
                       fontSize: '11px', fontWeight: 500,
-                      color: done ? 'var(--color-success)' : 'var(--color-text-secondary)'
+                      color: done
+                        ? 'var(--color-success)'
+                        : isProcessing
+                        ? 'var(--color-warning)'
+                        : 'var(--color-text-secondary)'
                     }}>
-                      {done ? 'Done' : 'Pending'}
+                      {done ? 'Done' : isProcessing ? 'Running' : 'Pending'}
                     </span>
                   </div>
                 </div>
@@ -304,7 +320,13 @@ function DocumentCard({ doc, onDelete, onPreview, onDownload }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         <Clock size={12} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} />
         <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-          {doc.created_at ? new Date(doc.created_at).toLocaleString() : 'Date unknown'}
+          {doc.created_at
+            ? new Date(doc.created_at).toLocaleString()
+            : doc.uploaded_at
+            ? new Date(doc.uploaded_at).toLocaleString()
+            : doc.timestamp
+            ? new Date(doc.timestamp).toLocaleString()
+            : 'Just now'}
         </span>
       </div>
 

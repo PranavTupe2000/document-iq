@@ -1,9 +1,11 @@
-from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class RAGResponse(BaseModel):
-    summary: str
-    key_insights: List[str]
-    document_type: str
-    confidence: float
+    answer: Optional[str] = None
+    summary: Optional[str] = None
+    key_insights: List[str] = Field(default_factory=list)
+    document_type: Optional[str] = None
+    confidence: Optional[float] = None

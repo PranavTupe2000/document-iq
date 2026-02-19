@@ -10,3 +10,4 @@ chroma.sqlite3
 
 **/node_modules
 document-iq/document-iq-platform/components/rag-engine/chroma_data/
+document-iq/document-iq-platform/components/application-component/uploaded_documents/

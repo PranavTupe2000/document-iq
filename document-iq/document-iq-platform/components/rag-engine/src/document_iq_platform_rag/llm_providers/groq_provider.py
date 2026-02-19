@@ -22,10 +22,10 @@ class GroqProvider(LLMProvider):
     def generate(self, prompt: str) -> dict:
         response = self.llm.invoke(prompt)
         if isinstance(response, RAGResponse):
-            return response.model_dump()
+            return response.model_dump(exclude_none=True)
         if isinstance(response, dict):
             try:
-                return RAGResponse(**response).model_dump()
+                return RAGResponse(**response).model_dump(exclude_none=True)
             except ValidationError as exc:
                 raise ValueError(f"Invalid structured response from LLM: {exc}") from exc
         raise ValueError(f"Unexpected LLM response type: {type(response).__name__}")

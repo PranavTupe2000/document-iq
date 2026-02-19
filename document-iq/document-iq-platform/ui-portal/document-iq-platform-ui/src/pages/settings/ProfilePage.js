@@ -30,16 +30,18 @@ function InfoRow({ icon: Icon, label, value }) {
 }
 
 export default function ProfilePage() {
-  const { logout }        = useAuth();
+  const { logout, user }        = useAuth();
   const { theme }         = useTheme();
   const navigate          = useNavigate();
-  const [profile, setProfile] = useState(null);
   const [org,     setOrg]     = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Use user from auth context directly — already fetched on login
+  const profile = user;
+
   useEffect(() => {
-    Promise.all([getMyProfileApi(), getMyOrgApi()])
-      .then(([pRes, oRes]) => { setProfile(pRes.data); setOrg(oRes.data); })
+    getMyOrgApi()
+      .then(r => setOrg(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -81,7 +83,7 @@ export default function ProfilePage() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
                 <h2 style={{ fontSize: '20px' }}>
-                  {profile?.email?.split('@')[0] || 'User'}
+                  {profile?.email?.split('@')[0] || profile?.username || 'My Account'}
                 </h2>
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: '4px',

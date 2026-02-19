@@ -109,7 +109,7 @@ export default function DashboardPage() {
 
   const totalDocs = docs.length
   const completedDocs  = docs.filter(d => d.overall_status === 'completed').length;
-  const processingDocs = docs.filter(d => d.overall_status === 'processing').length;
+  const processingDocs = docs.filter(d => d.overall_status === 'pending').length;
 
   const greeting = () => {
     const h = new Date().getHours();

@@ -30,6 +30,8 @@ def process_event(event: dict):
             "file_path": file_path,
             "current_stage": "ingestion_completed",
             "document_id": event["document_id"],
+            "organization_id": event.get("organization_id"),
+            "group_id": event.get("group_id"),
         },
     )
 

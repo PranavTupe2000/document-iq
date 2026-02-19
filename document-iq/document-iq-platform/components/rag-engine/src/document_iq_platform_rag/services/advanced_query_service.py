@@ -1,4 +1,5 @@
 import hashlib
+import json
 from typing import List
 
 from langchain_core.documents import Document
@@ -29,7 +30,7 @@ def advanced_query(org_id: int, group_id: int, question: str):
     if cached:
         return {"answer": cached, "cached": True}
 
-    vectorstore = get_vectorstore(org_id)
+    vectorstore = get_vectorstore(int(org_id))
 
     # =====================================================
     # 1️⃣ Multi-Query Retrieval
@@ -43,8 +44,11 @@ def advanced_query(org_id: int, group_id: int, question: str):
     """
 
     try:
-        import json
-        query_variants = json.loads(llm.generate(multi_query_prompt))
+        query_variants_raw = llm.generate(multi_query_prompt)
+        if isinstance(query_variants_raw, str):
+            query_variants = json.loads(query_variants_raw)
+        else:
+            query_variants = [question]
     except Exception:
         query_variants = [question]
 
@@ -161,23 +165,43 @@ def advanced_query(org_id: int, group_id: int, question: str):
         f"""
         You are a professional document analyst.
 
+        You must respond in valid JSON format only.
+        Your output must be a JSON object.
+
+        Return your answer in this JSON schema:
+        {{
+        "answer": "string"
+        }}
+
         Context:
         {context}
 
         Question:
         {question}
 
-        Provide concise and accurate answer.
+        Rules:
+        - Output must be valid JSON.
+        - No markdown.
+        - No explanation.
+        - No extra text.
         """
     )
+
 
     # =====================================================
     # 5️⃣ Store in Semantic Cache
     # =====================================================
-    redis_client.set(cache_key, response, ex=3600)
+    if isinstance(response, dict):
+        answer = response.get("answer") or response.get("summary")
+        if not answer:
+            answer = json.dumps(response)
+    else:
+        answer = str(response)
+
+    redis_client.set(cache_key, answer, ex=3600)
 
     return {
-        "answer": response,
+        "answer": answer,
         "cached": False,
         "retrieved_chunks": len(top_docs)
     }
