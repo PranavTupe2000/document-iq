@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background rounded square -->
+  <rect width="32" height="32" rx="7" fill="#0A66C2"/>
+  
+  <!-- Document body -->
+  <rect x="7" y="5" width="14" height="18" rx="2" fill="white" opacity="0.15"/>
+  <rect x="7" y="5" width="14" height="18" rx="2" fill="white" opacity="0.9"/>
+
+  <!-- Folded corner -->
+  <path d="M17 5 L21 9 L17 9 Z" fill="#0A66C2" opacity="0.3"/>
+  <path d="M17 5 L21 9 L17 9 Z" fill="#0A66C2" opacity="0.5"/>
+
+  <!-- Corner fold line -->
+  <path d="M17 5 L17 9 L21 9" stroke="#0A66C2" stroke-width="0.5" fill="none" opacity="0.4"/>
+
+  <!-- Text lines on document -->
+  <rect x="9.5" y="12" width="7" height="1.5" rx="0.75" fill="#0A66C2" opacity="0.5"/>
+  <rect x="9.5" y="15" width="9" height="1.5" rx="0.75" fill="#0A66C2" opacity="0.35"/>
+  <rect x="9.5" y="18" width="6" height="1.5" rx="0.75" fill="#0A66C2" opacity="0.35"/>
+
+  <!-- IQ badge - bottom right circle -->
+  <circle cx="22" cy="23" r="7" fill="#0A66C2"/>
+  <circle cx="22" cy="23" r="6" fill="#0052A3"/>
+
+  <!-- "IQ" text -->
+  <!-- I -->
+  <rect x="18.5" y="19.5" width="1.5" height="7" rx="0.75" fill="white"/>
+  <!-- Q -->
+  <circle cx="22.8" cy="23" r="2.8" stroke="white" stroke-width="1.4" fill="none"/>
+  <line x1="24.5" y1="24.8" x2="25.8" y2="26.2" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+</svg>
