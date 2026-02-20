@@ -13,7 +13,8 @@ dependencies = [
     "document-iq-platform-shared",
     "mlflow",
     "torch",
-    "torchvision"
+    "torchvision",
+    "ultralytics"
 ]
 
 [build-system]

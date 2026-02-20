@@ -1,41 +1,33 @@
 stages:
-  ingestion:
-    cmd: python src/document_iq_dl/components/data_ingestion.py
+
+  yolo_data_ingestion:
+    cmd: python src/document_iq_dl/components/yolo_data_ingestion.py
     deps:
       - data/raw/FUNSD
-      - src/document_iq_dl/components/data_ingestion.py
+      - src/document_iq_dl/datasets/funsd_to_yolo.py
+      - src/document_iq_dl/components/yolo_data_ingestion.py
     outs:
-      - data/interim/funsd_blocks.json
-  validation:
-    cmd: python src/document_iq_dl/components/data_validation.py
+      - data/yolo
+
+  yolo_data_validation:
+    cmd: python src/document_iq_dl/components/yolo_data_validation.py
     deps:
-      - data/interim/funsd_blocks.json
-      - src/document_iq_dl/components/data_validation.py
+      - data/yolo
+      - src/document_iq_dl/components/yolo_data_validation.py
     outs:
-      - artifacts/validation_report.json
-  transformation:
-    cmd: python src/document_iq_dl/components/data_transformation.py
+      - artifacts/dataset
+
+  yolo_training:
+    cmd: python src/document_iq_dl/components/yolo_model_trainer.py
     deps:
-      - data/interim/funsd_blocks.json
-      - src/document_iq_dl/components/data_transformation.py
+      - data/yolo
+      - configs/yolo_training.yaml
+      - src/document_iq_dl/components/yolo_model_trainer.py
     outs:
-      - data/processed
-  training:
-    cmd: python src/document_iq_dl/components/model_trainer.py
+      - artifacts/yolo_model
+
+  yolo_evaluation:
+    cmd: python src/document_iq_dl/components/yolo_model_evaluation.py
     deps:
-      - data/processed
-      - configs/training.yaml
-      - src/document_iq_dl/components/model_trainer.py
-      - src/document_iq_dl/models/layout_classifier.py
-      - src/document_iq_dl/datasets/funsd_dataset.py
-    outs:
-      - artifacts/model
-  evaluation:
-    cmd: python src/document_iq_dl/components/model_evaluation.py
-    deps:
-      - artifacts/model
-      - data/processed
-      - configs/training.yaml
-      - src/document_iq_dl/components/model_evaluation.py
-    outs:
-      - artifacts/evaluation
+      - artifacts/yolo_model
+      - src/document_iq_dl/components/yolo_model_evaluation.py
