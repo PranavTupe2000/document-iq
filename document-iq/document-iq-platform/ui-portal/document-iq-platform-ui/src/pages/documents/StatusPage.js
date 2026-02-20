@@ -486,9 +486,9 @@ export default function StatusPage() {
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <button
                 className="btn btn-secondary"
-                onClick={() => navigate('/groups')}
+                onClick={() => navigate('/documents')}
               >
-                Back to Groups
+                Back to Documents
               </button>
 
               {status.overall_status === 'completed' && (
