@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     # RAG
     rag_llm_provider: Optional[str] = None
     chroma_persist_dir: Optional[str] = None
+    chroma_port: Optional[str] = None
+    chroma_host: Optional[str] = None
     
     groq_api_key: Optional[str] = None
     groq_model: Optional[str] = None

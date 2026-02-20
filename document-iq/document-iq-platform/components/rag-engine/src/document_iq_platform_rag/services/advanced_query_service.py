@@ -193,6 +193,8 @@ def advanced_query(org_id: int, group_id: int, question: str):
     # =====================================================
     if isinstance(response, dict):
         answer = response.get("answer") or response.get("summary")
+        if isinstance(answer, list):
+            answer = "\n".join(str(item) for item in answer)
         if not answer:
             answer = json.dumps(response)
     else:

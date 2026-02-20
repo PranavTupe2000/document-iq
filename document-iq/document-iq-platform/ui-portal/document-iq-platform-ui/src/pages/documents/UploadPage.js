@@ -5,7 +5,7 @@ import {
   AlertCircle, ChevronDown, Loader, File
 } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
-import { listGroupsApi, analyzeDocumentApi } from '../../services/api';
+import { listGroupsApi, analyzeDocumentApi, getDocStatusApi } from '../../services/api';
 
 // ── File size formatter ────────────────────────────────────
 function formatSize(bytes) {
@@ -401,9 +401,25 @@ export default function UploadPage() {
   const [error,     setError]     = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [docId,     setDocId]     = useState(null);
+  const [docStatus,  setDocStatus]  = useState('processing');
 
   // Determine step
   const step = submitted ? 4 : file && groupId ? 3 : file || groupId ? 2 : 1;
+
+  useEffect(() => {
+    if (!submitted || !docId || docStatus === 'completed') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await getDocStatusApi(docId);
+        const s = res.data.overall_status || res.data.status;
+        if (s) setDocStatus(s);
+        if (s === 'completed' || s === 'failed') clearInterval(interval);
+      } catch {}
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [submitted, docId, docStatus]);
 
   useEffect(() => {
     listGroupsApi()
@@ -427,6 +443,10 @@ export default function UploadPage() {
       const res = await analyzeDocumentApi(formData);
       setDocId(res.data.document_id);
       setSubmitted(true);
+      // Check if already completed (fast processing)
+      if (res.data.status) {
+        setDocStatus(res.data.status);
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -476,35 +496,53 @@ export default function UploadPage() {
               <p style={{ fontSize: '12px', fontWeight: 600, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Processing Pipeline
               </p>
-              {['Ingestion', 'OCR', 'Layout Detection', 'Classification', 'RAG Indexing'].map((stage, i) => (
-                <div key={stage} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '6px 0',
-                  borderBottom: i < 4 ? '1px solid var(--color-border)' : 'none'
-                }}>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: i === 0 ? 'var(--color-primary)' : 'var(--color-border)',
-                    flexShrink: 0
-                  }} />
-                  <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{stage}</span>
-                  <span style={{
-                    marginLeft: 'auto', fontSize: '11px', fontWeight: 500,
-                    color: i === 0 ? 'var(--color-primary)' : 'var(--color-text-secondary)'
+              {['Ingestion', 'OCR', 'Layout Detection', 'Classification', 'RAG Indexing'].map((stage, i) => {
+                const isCompleted = docStatus === 'completed';
+                const dotColor = isCompleted
+                  ? 'var(--color-success)'
+                  : i === 0
+                  ? 'var(--color-primary)'
+                  : 'var(--color-border)';
+                const label = isCompleted
+                  ? 'Done'
+                  : i === 0
+                  ? 'In progress...'
+                  : 'Queued';
+                const labelColor = isCompleted
+                  ? 'var(--color-success)'
+                  : i === 0
+                  ? 'var(--color-primary)'
+                  : 'var(--color-text-secondary)';
+
+                return (
+                  <div key={stage} style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '6px 0',
+                    borderBottom: i < 4 ? '1px solid var(--color-border)' : 'none'
                   }}>
-                    {i === 0 ? 'In progress...' : 'Queued'}
-                  </span>
-                </div>
-              ))}
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: dotColor, flexShrink: 0
+                    }} />
+                    <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{stage}</span>
+                    <span style={{
+                      marginLeft: 'auto', fontSize: '11px', fontWeight: 500,
+                      color: labelColor
+                    }}>
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 className="btn btn-secondary"
                 style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => navigate('/groups')}
+                onClick={() => navigate('/documents')}
               >
-                Back to Groups
+                Back to Documents
               </button>
               <button
                 className="btn btn-primary"
