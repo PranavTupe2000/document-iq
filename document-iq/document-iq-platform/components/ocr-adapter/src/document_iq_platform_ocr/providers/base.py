@@ -7,6 +7,7 @@ class OCRProvider(ABC):
     @abstractmethod
     def extract(self, file_path: str) -> OCRResult:
         """
-        Extract text and return normalized OCR result.
+        Extract text and return normalized OCR result
+        with word-level bounding boxes.
         """
         pass

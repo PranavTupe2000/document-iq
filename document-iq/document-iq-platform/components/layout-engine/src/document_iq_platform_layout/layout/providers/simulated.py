@@ -54,14 +54,25 @@ class SimulatedLayoutProvider(LayoutProvider):
 
         return [left, top, right, bottom]
 
-    def extract_layout(self, ocr_text: str) -> Dict:
-        blocks = self.split_into_blocks(ocr_text)
+    def extract_layout(self, file_path: str, ocr_result: dict) -> Dict:
+
+        # Backward compatibility:
+        # Prefer structured OCR
+        if ocr_result and "full_text" in ocr_result:
+            text = ocr_result["full_text"]
+        else:
+            text = ""
+
+        blocks = self.split_into_blocks(text)
 
         structured_blocks = []
 
         for block in blocks:
             block_type = self.classify_block(block["text"])
-            bbox = self.simulate_bounding_box(block["position"], block["text"])
+            bbox = self.simulate_bounding_box(
+                block["position"],
+                block["text"]
+            )
 
             structured_blocks.append({
                 "type": block_type,

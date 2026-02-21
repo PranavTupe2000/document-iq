@@ -1,0 +1,15 @@
+training:
+  epochs: 60
+  batch_size: 4
+  img_size: 640
+  device: "cpu"
+  workers: 0
+  patience: 15
+
+model:
+  base_model: "yolov8s.pt"
+  num_classes: 4
+
+mlflow:
+  experiment_name: "document-iq-dl-layout-yolo"
+  registered_model_name: "document-iq-layout-detector"

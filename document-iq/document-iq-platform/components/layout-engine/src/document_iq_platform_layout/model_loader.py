@@ -9,7 +9,7 @@ settings = Settings()
 def load_model():
     try:
         mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
-        model_uri = "models:/document-iq-layout-classifier@production"
+        model_uri = "models:/document-iq-layout-detector@production"
         model = mlflow.pyfunc.load_model(model_uri)
         logger.info("Layout model loaded from MLflow (production alias)")
         return model

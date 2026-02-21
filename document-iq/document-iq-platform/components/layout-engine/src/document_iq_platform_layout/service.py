@@ -17,15 +17,24 @@ layout_provider = get_layout_provider()
 def process_event(event: dict):
     request_id = event["request_id"]
 
-    workflow = redis_client.hgetall(f"workflow:{request_id}")
+    workflow_key = f"workflow:{request_id}"
+    workflow = redis_client.hgetall(workflow_key)
 
-    if "ocr_text" not in workflow:
-        logger.error(f"OCR text missing for {request_id}")
-        return
+    # 🔹 Prefer structured OCR
+    if "ocr_result" in workflow:
+        ocr_result = json.loads(workflow["ocr_result"])
+    else:
+        # Backward fallback
+        ocr_text = workflow.get("ocr_text", "")
+        ocr_result = {
+            "words": [],
+            "full_text": ocr_text
+        }
 
-    ocr_text = workflow["ocr_text"]
-
-    layout_result = layout_provider.extract_layout(ocr_text)
+    layout_result = layout_provider.extract_layout(
+        file_path=event.get("file_path"),
+        ocr_result=ocr_result
+    )
 
     redis_client.hset(
         f"workflow:{request_id}",

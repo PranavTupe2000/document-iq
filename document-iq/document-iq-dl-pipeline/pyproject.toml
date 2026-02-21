@@ -6,7 +6,8 @@ requires-python = ">=3.9"
 dependencies = [
     "dvc",
     "torch",
-    "torchvision"
+    "torchvision",
+    "ultralytics"
 ]
 
 [tool.setuptools]

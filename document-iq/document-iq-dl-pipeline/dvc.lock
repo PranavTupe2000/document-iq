@@ -107,3 +107,77 @@ stages:
       md5: 27c44301b74dfa9a9c29106c50d6a2a1.dir
       size: 77
       nfiles: 1
+  yolo_data_ingestion:
+    cmd: python src/document_iq_dl/components/yolo_data_ingestion.py
+    deps:
+    - path: data/raw/FUNSD
+      hash: md5
+      md5: 3ce75d0190cf7518f8ebaadd888fcf4b.dir
+      size: 27779251
+      nfiles: 400
+    - path: src/document_iq_dl/components/yolo_data_ingestion.py
+      hash: md5
+      md5: 876fec4e83c8b5a0a45ada2917c6d272
+      size: 1143
+    - path: src/document_iq_dl/datasets/funsd_to_yolo.py
+      hash: md5
+      md5: 28a27ce1b855776d108306614ef4c0fe
+      size: 5360
+    outs:
+    - path: data/yolo
+      hash: md5
+      md5: 2b9640a1ae8f33006f51e91d99d581e3.dir
+      size: 16707628
+      nfiles: 399
+  yolo_data_validation:
+    cmd: python src/document_iq_dl/components/yolo_data_validation.py
+    deps:
+    - path: data/yolo
+      hash: md5
+      md5: 2b9640a1ae8f33006f51e91d99d581e3.dir
+      size: 16707628
+      nfiles: 399
+    - path: src/document_iq_dl/components/yolo_data_validation.py
+      hash: md5
+      md5: 7eb68946a865dc21fb70d360887c0d2c
+      size: 3585
+    outs:
+    - path: artifacts/dataset
+      hash: md5
+      md5: df6f1802fa88f797c30e7c590b5a40ce.dir
+      size: 248
+      nfiles: 1
+  yolo_training:
+    cmd: python src/document_iq_dl/components/yolo_model_trainer.py
+    deps:
+    - path: configs/yolo_training.yaml
+      hash: md5
+      md5: 6893bdeaed9e0613b3a5e919c7f625b4
+      size: 262
+    - path: data/yolo
+      hash: md5
+      md5: 5646ea1137208295d0092b49d8e79e33.dir
+      size: 16946932
+      nfiles: 401
+    - path: src/document_iq_dl/components/yolo_model_trainer.py
+      hash: md5
+      md5: 8eefcfdb342db715bd57d751c897f10f
+      size: 4231
+    outs:
+    - path: artifacts/yolo_model
+      hash: md5
+      md5: f185523259831318ec35a0dd341d3a3d.dir
+      size: 73796064
+      nfiles: 25
+  yolo_evaluation:
+    cmd: python src/document_iq_dl/components/yolo_model_evaluation.py
+    deps:
+    - path: artifacts/yolo_model
+      hash: md5
+      md5: 59067ca92328e3cca042e39e671014a9.dir
+      size: 81092085
+      nfiles: 39
+    - path: src/document_iq_dl/components/yolo_model_evaluation.py
+      hash: md5
+      md5: 3fd957ad75de3a61a6b6660c63bbd162
+      size: 4468
