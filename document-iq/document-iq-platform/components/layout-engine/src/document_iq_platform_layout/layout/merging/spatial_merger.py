@@ -31,13 +31,5 @@ def merge_words_into_blocks(
         block["text"] = " ".join(
             w["text"] for w in assigned_words
         )
-      
-    print("------------------------------------------------")  
-    for word in ocr_words[:5]:
-        print("OCR word bbox:", word["bbox"])
-
-    for block in blocks[:5]:
-        print("YOLO block bbox:", block["bbox"])
-
-    print("------------------------------------------------")  
+        
     return blocks
