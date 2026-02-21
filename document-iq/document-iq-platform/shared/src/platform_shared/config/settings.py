@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     
+    # MongoDB
+    mongo_uri: Optional[str] = None
+    mongo_db_name: Optional[str] = None
+    
     # Component URIs
     rag_engine_url: Optional[str] = None
     account_component_url: Optional[str] = None

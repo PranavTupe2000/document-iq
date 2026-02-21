@@ -75,6 +75,14 @@ services:
 
     restart: unless-stopped
 
+  mongo:
+    image: mongo:7
+    container_name: document-iq-mongo
+    ports:
+      - "3309:27017"
+    volumes:
+      - mongo_data:/data/db
+
   aggregator:
     build:
       context: .
@@ -250,3 +258,4 @@ volumes:
   ingestion-data:
   mysql_data:
   chroma_data:
+  mongo_data:

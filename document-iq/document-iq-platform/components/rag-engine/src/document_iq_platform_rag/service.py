@@ -1,6 +1,8 @@
 import ast
 import json
 
+from document_iq_platform_rag.repositories.document_summary_repository import save_document_summary
+from document_iq_platform_rag.repositories.layout_repository import save_layout_ast
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -67,6 +69,13 @@ def process_event(event: dict):
         return
 
     layout_json = ast.literal_eval(layout_data)
+    
+    save_layout_ast(
+        document_id=document_id,
+        org_id=org_id,
+        group_id=group_id,
+        layout_ast=layout_json
+    )
 
     # ==============================
     # 1️⃣ Build Hierarchical Context
@@ -113,16 +122,6 @@ def process_event(event: dict):
         
         count = vectorstore._collection.count()
         logger.info(f"Chroma docs after insert: {count}")
-        
-    # TODO: Remove this
-    # retriever = vectorstore.as_retriever(
-    #     search_kwargs={
-    #         "k": 5,
-    #         "filter": {
-                
-    #         }
-    #     }
-    # )
         
     # ======================================================
     # Global Similarity Retrieval (Metadata Filtered)
@@ -188,6 +187,16 @@ Rules:
 
     try:
         structured_response = llm.generate(final_prompt)
+        if isinstance(structured_response, dict):
+            save_document_summary(
+                document_id=document_id,
+                org_id=org_id,
+                group_id=group_id,
+                classification=classification,
+                summary=structured_response.get("summary"),
+                key_insights=structured_response.get("key_insights", []),
+                structured_entities={}  # Phase 3.2 enhancement
+            )
     except Exception as exc:
         logger.exception(f"RAG failed for {request_id}: {exc}")
         redis_client.hset(
