@@ -1,7 +1,11 @@
 import requests
 
 from document_iq_platform_ocr.providers.base import OCRProvider
-from document_iq_platform_ocr.models.ocr_result import OCRResult, OCRPage, OCRWord
+from document_iq_platform_ocr.models.ocr_result import (
+    OCRResult,
+    OCRPage,
+    OCRWord,
+)
 from platform_shared.config.settings import Settings
 
 
@@ -10,7 +14,6 @@ class OCRSpaceOCR(OCRProvider):
     ENDPOINT = "https://api.ocr.space/parse/image"
 
     def __init__(self):
-
         settings = Settings()
         self.api_key = settings.ocr_space_api_key
 
@@ -40,37 +43,51 @@ class OCRSpaceOCR(OCRProvider):
 
         parsed_results = data.get("ParsedResults", [])
 
-        for idx, page in enumerate(parsed_results):
+        for page_index, page in enumerate(parsed_results):
 
-            page_number = idx + 1
-            text = page.get("ParsedText", "")
+            text_overlay = page.get("TextOverlay")
 
-            lines = [
-                line.strip()
-                for line in text.splitlines()
-                if line.strip()
-            ]
+            if not text_overlay:
+                continue
 
-            # Synthetic layout: stack lines vertically
-            y_cursor = 0
-            line_height = 40
+            page_number = page_index + 1
+            lines_text = []
 
-            for line in lines:
+            for line in text_overlay.get("Lines", []):
+                line_words = line.get("Words", [])
 
-                words.append(
-                    OCRWord(
-                        text=line,
-                        bbox=[0, y_cursor, 1000, y_cursor + line_height],
-                        page=page_number,
-                    )
+                line_text = " ".join(
+                    w.get("WordText", "")
+                    for w in line_words
                 )
+                lines_text.append(line_text)
 
-                y_cursor += line_height + 10
+                for w in line_words:
+
+                    text = w.get("WordText", "")
+
+                    left = w.get("Left", 0)
+                    top = w.get("Top", 0)
+                    width = w.get("Width", 0)
+                    height = w.get("Height", 0)
+
+                    x0 = left
+                    y0 = top
+                    x1 = left + width
+                    y1 = top + height
+
+                    words.append(
+                        OCRWord(
+                            text=text,
+                            bbox=[x0, y0, x1, y1],
+                            page=page_number,
+                        )
+                    )
 
             pages.append(
                 OCRPage(
                     page=page_number,
-                    lines=lines,
+                    lines=lines_text,
                 )
             )
 

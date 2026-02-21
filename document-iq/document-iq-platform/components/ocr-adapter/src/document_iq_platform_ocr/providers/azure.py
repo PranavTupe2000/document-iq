@@ -3,7 +3,11 @@ import time
 import requests
 
 from document_iq_platform_ocr.providers.base import OCRProvider
-from document_iq_platform_ocr.models.ocr_result import OCRResult, OCRPage, OCRWord
+from document_iq_platform_ocr.models.ocr_result import (
+    OCRResult,
+    OCRPage,
+    OCRWord,
+)
 
 
 class AzureOCR(OCRProvider):
@@ -25,7 +29,7 @@ class AzureOCR(OCRProvider):
             "Content-Type": "application/octet-stream",
         }
 
-        # 1️⃣ Submit document for analysis
+        # Submit document
         response = requests.post(
             f"{self.endpoint}/vision/v3.2/read/analyze",
             headers=headers,
@@ -41,12 +45,12 @@ class AzureOCR(OCRProvider):
         operation_url = response.headers.get("Operation-Location")
 
         if not operation_url:
-            raise RuntimeError("Azure OCR missing Operation-Location header")
+            raise RuntimeError(
+                "Azure OCR missing Operation-Location header"
+            )
 
-        # 2️⃣ Poll for result
         result = self._poll_operation(operation_url)
 
-        # 3️⃣ Normalize into OCRResult
         pages = []
         words = []
 
@@ -58,36 +62,36 @@ class AzureOCR(OCRProvider):
         for page in read_results:
 
             page_number = page.get("page", 1)
+            lines_text = []
 
-            lines = []
-            
             for line in page.get("lines", []):
-                lines.append(line.get("text", ""))
+                lines_text.append(line.get("text", ""))
 
                 for word in line.get("words", []):
                     text = word.get("text", "")
 
-                    bbox_8 = word.get("boundingBox", [])
+                    # Azure gives 8-point polygon
+                    polygon = word.get("boundingBox", [])
 
-                    # Azure gives 8 points → convert to rectangle
-                    xs = bbox_8[0::2]
-                    ys = bbox_8[1::2]
+                    if len(polygon) == 8:
+                        xs = polygon[0::2]
+                        ys = polygon[1::2]
 
-                    x0, x1 = min(xs), max(xs)
-                    y0, y1 = min(ys), max(ys)
+                        x0, x1 = min(xs), max(xs)
+                        y0, y1 = min(ys), max(ys)
 
-                    words.append(
-                        OCRWord(
-                            text=text,
-                            bbox=[x0, y0, x1, y1],
-                            page=page_number,
+                        words.append(
+                            OCRWord(
+                                text=text,
+                                bbox=[x0, y0, x1, y1],
+                                page=page_number,
+                            )
                         )
-                    )
 
             pages.append(
                 OCRPage(
                     page=page_number,
-                    lines=lines,
+                    lines=lines_text,
                 )
             )
 
@@ -99,7 +103,7 @@ class AzureOCR(OCRProvider):
             "Ocp-Apim-Subscription-Key": self.api_key
         }
 
-        for _ in range(20):  # max 20 attempts
+        for _ in range(20):
 
             response = requests.get(
                 operation_url,
