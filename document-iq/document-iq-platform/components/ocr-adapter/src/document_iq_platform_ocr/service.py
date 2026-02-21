@@ -1,3 +1,4 @@
+import json
 from platform_shared.storage.redis_client import get_redis_client
 from platform_shared.messaging.kafka import create_producer
 from platform_shared.config.settings import Settings
@@ -41,11 +42,28 @@ def process_event(event: dict):
 
         extracted_text = "\n".join(all_lines)
 
+        # Convert words to JSON-safe dict
+        words_payload = []
+
+        if result.words:
+            for word in result.words:
+                words_payload.append({
+                    "text": word.text,
+                    "bbox": word.bbox,
+                    "page": word.page,
+                })
+
+        ocr_result_payload = {
+            "words": words_payload,
+            "full_text": extracted_text,
+        }
+
         redis_client.hset(
             f"workflow:{request_id}",
             mapping={
                 "ocr_status": "completed",
-                "ocr_text": extracted_text,
+                "ocr_text": extracted_text,  # backward compatible
+                "ocr_result": json.dumps(ocr_result_payload),
                 "current_stage": "ocr_completed",
             },
         )

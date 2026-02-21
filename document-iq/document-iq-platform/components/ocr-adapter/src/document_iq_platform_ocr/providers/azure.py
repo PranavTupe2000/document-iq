@@ -3,7 +3,7 @@ import time
 import requests
 
 from document_iq_platform_ocr.providers.base import OCRProvider
-from document_iq_platform_ocr.models.ocr_result import OCRResult, OCRPage
+from document_iq_platform_ocr.models.ocr_result import OCRResult, OCRPage, OCRWord
 
 
 class AzureOCR(OCRProvider):
@@ -48,6 +48,7 @@ class AzureOCR(OCRProvider):
 
         # 3️⃣ Normalize into OCRResult
         pages = []
+        words = []
 
         read_results = (
             result.get("analyzeResult", {})
@@ -56,19 +57,41 @@ class AzureOCR(OCRProvider):
 
         for page in read_results:
 
-            lines = [
-                line.get("text", "")
-                for line in page.get("lines", [])
-            ]
+            page_number = page.get("page", 1)
+
+            lines = []
+            
+            for line in page.get("lines", []):
+                lines.append(line.get("text", ""))
+
+                for word in line.get("words", []):
+                    text = word.get("text", "")
+
+                    bbox_8 = word.get("boundingBox", [])
+
+                    # Azure gives 8 points → convert to rectangle
+                    xs = bbox_8[0::2]
+                    ys = bbox_8[1::2]
+
+                    x0, x1 = min(xs), max(xs)
+                    y0, y1 = min(ys), max(ys)
+
+                    words.append(
+                        OCRWord(
+                            text=text,
+                            bbox=[x0, y0, x1, y1],
+                            page=page_number,
+                        )
+                    )
 
             pages.append(
                 OCRPage(
-                    page=page.get("page", 1),
+                    page=page_number,
                     lines=lines,
                 )
             )
 
-        return OCRResult(pages=pages)
+        return OCRResult(pages=pages, words=words)
 
     def _poll_operation(self, operation_url: str) -> dict:
 
