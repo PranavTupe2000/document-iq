@@ -1,0 +1,12 @@
+{
+    "total_images": 199,
+    "total_labels": 9743,
+    "class_distribution": {
+        "other": 1214,
+        "question": 4343,
+        "answer": 3623,
+        "header": 563
+    },
+    "empty_label_files": 0,
+    "invalid_entries": 0
+}

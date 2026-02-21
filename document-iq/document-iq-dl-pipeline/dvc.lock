@@ -152,7 +152,7 @@ stages:
     deps:
     - path: configs/yolo_training.yaml
       hash: md5
-      md5: 339a90af0cea8d010c4b540b0083108b
+      md5: 6893bdeaed9e0613b3a5e919c7f625b4
       size: 262
     - path: data/yolo
       hash: md5
@@ -166,18 +166,18 @@ stages:
     outs:
     - path: artifacts/yolo_model
       hash: md5
-      md5: cd5b15aab7ea04ef39d95b5567f5555b.dir
-      size: 24909708
+      md5: f185523259831318ec35a0dd341d3a3d.dir
+      size: 73796064
       nfiles: 25
   yolo_evaluation:
     cmd: python src/document_iq_dl/components/yolo_model_evaluation.py
     deps:
     - path: artifacts/yolo_model
       hash: md5
-      md5: 1b4470c48be37cbe56d9d7989163ae57.dir
-      size: 30982414
+      md5: 59067ca92328e3cca042e39e671014a9.dir
+      size: 81092085
       nfiles: 39
     - path: src/document_iq_dl/components/yolo_model_evaluation.py
       hash: md5
-      md5: fdfa7738b388f747d4a05317f6134caf
-      size: 4403
+      md5: 3fd957ad75de3a61a6b6660c63bbd162
+      size: 4468
