@@ -11,4 +11,11 @@ db.document_summaries.create_index("group_id")
 db.document_summaries.create_index("org_id")
 db.document_summaries.create_index("classification")
 
+db.chat_sessions.create_index("session_id", unique=True)
+db.chat_sessions.create_index("group_id")
+db.chat_sessions.create_index("org_id")
+
+db.chat_messages.create_index("session_id")
+db.chat_messages.create_index("created_at")
+
 print("Indexes created successfully")

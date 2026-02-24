@@ -1,6 +1,7 @@
 import ast
 import json
 
+from document_iq_platform_rag.chunking.block_chunker import build_block_documents
 from document_iq_platform_rag.repositories.document_summary_repository import save_document_summary
 from document_iq_platform_rag.repositories.layout_repository import save_layout_ast
 from langchain_core.documents import Document
@@ -90,31 +91,14 @@ def process_event(event: dict):
     # ======================================================
     # 2️⃣ Add Structured Blocks to GLOBAL Knowledge Base
     # ======================================================
-    documents = []
-
-    for block in layout_json["blocks"]:
-        if block["type"] not in ["header", "body", "table"]:
-            continue
-
-        chunks = text_splitter.split_text(block["text"])
-
-        for chunk in chunks:
-            documents.append(
-                Document(
-                    page_content=chunk,
-                    metadata={
-                        "request_id": request_id,
-                        "organization_id": org_id,
-                        "group_id": group_id,
-                        "document_id": document_id,
-                        "classification": classification,
-                        "block_type": block["type"],
-                        "page": block.get("page", 1),
-                        "bbox": json.dumps(block.get("bbox")),
-                        "position": block.get("position", 0),
-                    },
-                )
-            )
+    documents = build_block_documents(
+        layout_json=layout_json,
+        org_id=org_id,
+        group_id=group_id,
+        document_id=document_id,
+        classification=classification,
+        text_splitter=text_splitter,
+    )
     vectorstore = get_vectorstore(org_id)
     
     if documents:
