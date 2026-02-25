@@ -271,22 +271,6 @@ Return JSON:
         redis_client.set(cache_key, answer, ex=3600)
         save_chat_message(session_id, "assistant", answer)
 
-        # TODO: Remove the following
-        debug_str =  f"""
-You are a professional document analyst.
-
-Below are summaries of documents in a group:
-
-{context}
-
-Provide a concise overall group-level summary.
-
-Return JSON:
-{{
-  "answer": "string"
-}}
-"""
-        print(debug_str)
         return {"answer": answer, "cached": False}
 
     # -----------------------------------------------------
@@ -383,25 +367,7 @@ Return JSON:
 }}
 """
     )
-    # TODO: Remove the following
-    debug_str_2 = f"""
-You are a professional document analyst in an ongoing conversation.
-
-Conversation Context:
-{conversation_context}
-
-Retrieved Document Context:
-{context}
-
-Current Question:
-{question}
-
-Return JSON:
-{{
-  "answer": "string"
-}}
-"""
-    print(debug_str_2)
+    
     answer = response.get("answer") if isinstance(response, dict) else str(response)
 
     redis_client.set(cache_key, answer, ex=3600)
