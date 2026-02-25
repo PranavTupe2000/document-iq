@@ -1,0 +1,14 @@
+document-iq\document-iq-core
+document-iq\document-iq-dl-pipeline
+document-iq\document-iq-ml-pipeline
+document-iq\document-iq-platform\components\account-component
+document-iq\document-iq-platform\components\aggregator
+document-iq\document-iq-platform\components\application-component
+document-iq\document-iq-platform\components\classification-engine
+document-iq\document-iq-platform\components\ingestion-worker
+document-iq\document-iq-platform\components\layout-engine
+document-iq\document-iq-platform\components\ocr-adapter
+document-iq\document-iq-platform\components\rag-engine
+document-iq\document-iq-platform\gateways
+document-iq\document-iq-platform\ops
+document-iq\document-iq-platform\ui-portal\document-iq-platform-ui\src
