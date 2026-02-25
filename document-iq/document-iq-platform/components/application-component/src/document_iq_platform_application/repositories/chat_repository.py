@@ -87,3 +87,13 @@ def update_session_summary(session_id, summary, last_index):
             }
         }
     )
+    
+def get_all_messages(session_id: str):
+    db = get_mongo_db()
+
+    return list(
+        db.chat_messages.find(
+            {"session_id": session_id},
+            {"_id": 0}
+        ).sort("created_at", 1)
+    )

@@ -8,7 +8,7 @@ router = APIRouter()
 client = ServiceClient(settings.application_component_url)
 
 
-@router.api_route("/groups/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@router.api_route("/groups/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 @router.api_route("/documents/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy_application(path: str, request: Request):
 
