@@ -7,10 +7,13 @@ from langchain_core.documents import Document
 from sentence_transformers import CrossEncoder
 from sklearn.metrics.pairwise import cosine_similarity
 
-from document_iq_platform_rag.vectorstore.chroma_client import get_vectorstore
-from document_iq_platform_rag.llm_providers.factory import get_llm_provider
+from platform_shared.storage.mongo_client import get_mongo_db
 from platform_shared.storage.redis_client import get_redis_client
 from platform_shared.config.settings import Settings
+
+from document_iq_platform_rag.vectorstore.chroma_client import get_vectorstore
+from document_iq_platform_rag.llm_providers.factory import get_llm_provider
+from document_iq_platform_rag.query_router import classify_query_intent
 
 
 settings = Settings()
@@ -21,6 +24,7 @@ reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 # =========================================================
 # 🔹 Helper Functions (HTTP Calls to Application)
 # =========================================================
+
 def save_chat_message(session_id: str, role: str, content: str):
     try:
         requests.post(
@@ -29,7 +33,7 @@ def save_chat_message(session_id: str, role: str, content: str):
             timeout=5,
         )
     except Exception:
-        pass  # Never break RAG if chat logging fails
+        pass
 
 
 def fetch_session_memory(session_id: str):
@@ -74,7 +78,24 @@ def generate_title(session_id: str, question: str):
 
 
 # =========================================================
-# 🔹 Memory Builder (No Direct Mongo Access)
+# 🔹 STEP 2 — Group Summary Fetch Helper
+# =========================================================
+
+def fetch_group_summaries(org_id: int, group_id: int):
+    db = get_mongo_db()
+
+    summaries = list(
+        db.document_summaries.find(
+            {"org_id": org_id, "group_id": group_id},
+            {"_id": 0}
+        )
+    )
+
+    return summaries
+
+
+# =========================================================
+# 🔹 Memory Builder
 # =========================================================
 
 MAX_MEMORY_MESSAGES = 20
@@ -145,14 +166,135 @@ def advanced_query(org_id: int, group_id: int, session_id: str, question: str):
         save_chat_message(session_id, "assistant", cached)
         return {"answer": cached, "cached": True}
 
-    vectorstore = get_vectorstore(int(org_id))
-
-    # Auto title (first message)
     generate_title(session_id, question)
 
     # =====================================================
-    # Multi Query Retrieval
+    # 🔥 STEP 3 — Intelligent Query Routing
     # =====================================================
+
+    intent = classify_query_intent(question)
+    # TODO: remove the following
+    print(intent)
+    # -----------------------------------------------------
+    # GROUP SUMMARY MODE
+    # -----------------------------------------------------
+
+    if intent == "GROUP_SUMMARY":
+
+        summaries = fetch_group_summaries(org_id, group_id)
+
+        if not summaries:
+            answer = "No document summaries available for this group."
+            save_chat_message(session_id, "assistant", answer)
+            return {"answer": answer, "cached": False}
+
+        context = ""
+        for i, s in enumerate(summaries, 1):
+            context += f"""
+Document {i}:
+Classification: {s.get('classification')}
+Summary: {s.get('summary')}
+Key Insights: {s.get('key_insights')}
+"""
+
+        response = llm.generate(
+            f"""
+You are a professional document analyst.
+
+Below are summaries of documents in a group:
+
+{context}
+
+Provide a concise overall group-level summary.
+
+Return JSON:
+{{
+  "answer": "string"
+}}
+"""
+        )
+
+        answer = response.get("answer") if isinstance(response, dict) else str(response)
+
+        redis_client.set(cache_key, answer, ex=3600)
+        save_chat_message(session_id, "assistant", answer)
+
+        return {"answer": answer, "cached": False}
+
+    # -----------------------------------------------------
+    # CROSS DOCUMENT COMPARE MODE
+    # -----------------------------------------------------
+
+    if intent == "CROSS_DOC_COMPARE":
+
+        summaries = fetch_group_summaries(org_id, group_id)
+
+        if len(summaries) < 2:
+            answer = "Not enough documents to compare."
+            save_chat_message(session_id, "assistant", answer)
+            return {"answer": answer, "cached": False}
+
+        context = ""
+        for i, s in enumerate(summaries, 1):
+            context += f"""
+Document {i}:
+Classification: {s.get('classification')}
+Summary: {s.get('summary')}
+Key Insights: {s.get('key_insights')}
+"""
+
+        response = llm.generate(
+            f"""
+You are a professional document comparison analyst.
+
+Below are document summaries:
+
+{context}
+
+Question:
+{question}
+
+Provide:
+- Similarities
+- Differences
+- Key observations
+
+Return JSON:
+{{
+  "answer": "string"
+}}
+"""
+        )
+
+        answer = response.get("answer") if isinstance(response, dict) else str(response)
+
+        redis_client.set(cache_key, answer, ex=3600)
+        save_chat_message(session_id, "assistant", answer)
+
+        # TODO: Remove the following
+        debug_str =  f"""
+You are a professional document analyst.
+
+Below are summaries of documents in a group:
+
+{context}
+
+Provide a concise overall group-level summary.
+
+Return JSON:
+{{
+  "answer": "string"
+}}
+"""
+        print(debug_str)
+        return {"answer": answer, "cached": False}
+
+    # -----------------------------------------------------
+    # SINGLE DOCUMENT MODE (Default)
+    # -----------------------------------------------------
+
+    vectorstore = get_vectorstore(int(org_id))
+
     try:
         query_variants_raw = llm.generate(
             f"Generate 3 semantic variations as JSON list.\nQuery: {question}"
@@ -220,9 +362,6 @@ def advanced_query(org_id: int, group_id: int, session_id: str, question: str):
     top_docs = [doc for doc, _ in ranked[:5]]
     context = "\n\n".join([doc.page_content for doc in top_docs])
 
-    # =====================================================
-    # Inject Conversation Context
-    # =====================================================
     conversation_context = build_conversation_context(session_id)
 
     response = llm.generate(
@@ -244,11 +383,26 @@ Return JSON:
 }}
 """
     )
+    # TODO: Remove the following
+    debug_str_2 = f"""
+You are a professional document analyst in an ongoing conversation.
 
-    if isinstance(response, dict):
-        answer = response.get("answer") or json.dumps(response)
-    else:
-        answer = str(response)
+Conversation Context:
+{conversation_context}
+
+Retrieved Document Context:
+{context}
+
+Current Question:
+{question}
+
+Return JSON:
+{{
+  "answer": "string"
+}}
+"""
+    print(debug_str_2)
+    answer = response.get("answer") if isinstance(response, dict) else str(response)
 
     redis_client.set(cache_key, answer, ex=3600)
     save_chat_message(session_id, "assistant", answer)
