@@ -66,8 +66,16 @@ export const deleteDocumentApi   = (id)      => api.delete(`/documents/${id}`);
 export const getDocsByGroupApi   = (groupId) => api.get(`/documents/group/${groupId}`);
 export const downloadDocumentApi = (id)      => api.get(`/documents/${id}/download`, { responseType: 'blob' });
 
+// ─── Sessions ─────────────────────────────────────────────
+export const createSessionApi  = (groupId)                => api.post(`/groups/${groupId}/sessions`);
+export const listSessionsApi   = (groupId)                => api.get(`/groups/${groupId}/sessions`);
+export const renameSessionApi  = (groupId, sessionId, title) =>
+  api.patch(`/groups/${groupId}/sessions/${sessionId}`, { title });
+export const getSessionHistoryApi = (groupId, sessionId) =>
+  api.get(`/groups/${groupId}/sessions/${sessionId}/history`);
+
 // ─── RAG / Query ──────────────────────────────────────────
-export const queryGroupApi = (groupId, question) =>
-  api.post(`/groups/${groupId}/query`, { group_id: groupId, question });
+export const queryGroupApi = (groupId, sessionId, question) =>
+  api.post(`/groups/${groupId}/query`, { session_id: sessionId, question });
 
 export default api;

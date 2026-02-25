@@ -19,6 +19,9 @@ from document_iq_platform_application.messaging.producer import (
     publish_ingestion_event,
 )
 from platform_shared.config.settings import Settings
+from platform_shared.storage.redis_client import get_redis_client
+
+redis_client = get_redis_client()
 import os
 
 settings = Settings()
@@ -104,6 +107,7 @@ async def analyze_document(
 
 @router.get("/{document_id}/status")
 def get_document_status(document_id: int, db: Session = Depends(get_db)):
+
     job = (
         db.query(ProcessingJob)
         .filter(ProcessingJob.document_id == document_id)
@@ -113,9 +117,38 @@ def get_document_status(document_id: int, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Processing job not found")
 
+    request_id = f"doc_{document_id}"
+    workflow_key = f"workflow:{request_id}"
+
+    workflow = redis_client.hgetall(workflow_key)
+
+    if not workflow:
+        return {
+            "document_id": document_id,
+            "overall_status": job.status,
+            "stages": {}
+        }
+
+    stages = {
+        "ingestion": workflow.get("ingestion_status", "pending"),
+        "ocr": workflow.get("ocr_status", "pending"),
+        "classification": workflow.get("classification_status", "pending"),
+        "layout": workflow.get("layout_status", "pending"),
+        "rag": workflow.get("rag_status", "pending"),
+    }
+
+    # Determine overall status dynamically
+    if all(status == "completed" for status in stages.values()):
+        overall_status = "completed"
+    elif any(status == "completed" for status in stages.values()):
+        overall_status = "processing"
+    else:
+        overall_status = "pending"
+
     return {
         "document_id": document_id,
-        "status": job.status,
+        "overall_status": overall_status,
+        "stages": stages,
     }
 
 @router.get("/{document_id}/result")

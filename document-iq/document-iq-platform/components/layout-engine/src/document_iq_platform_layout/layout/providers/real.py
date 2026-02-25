@@ -1,4 +1,5 @@
 from document_iq_platform_layout.layout.post_processing.qa_pairing import pair_questions_answers
+from document_iq_platform_layout.layout.post_processing.table_extractor import extract_tables
 from document_iq_platform_layout.layout.providers.base import LayoutProvider
 from document_iq_platform_layout.layout.merging.spatial_merger import (
     merge_words_into_blocks,
@@ -57,7 +58,11 @@ class RealLayoutProvider(LayoutProvider):
             ocr_result.get("words", [])
         )
         
-        qa_pairs = pair_questions_answers(blocks)
+        tables, remaining_blocks = extract_tables(blocks)
+
+        qa_pairs = pair_questions_answers(remaining_blocks)
+
+        blocks = remaining_blocks + tables
 
         return {
             "blocks": blocks,

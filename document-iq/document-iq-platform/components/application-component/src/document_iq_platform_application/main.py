@@ -7,6 +7,8 @@ from document_iq_platform_application.api import (
     documents,
     document_crud,
     group_query,
+    internal_chat,
+    sessions,
 )
 from document_iq_platform_application.consumers.processing_completed import start_consumer
 from document_iq_core.utils import get_logger
@@ -18,6 +20,8 @@ app.include_router(groups.router)
 app.include_router(documents.router)
 app.include_router(document_crud.router)
 app.include_router(group_query.router)
+app.include_router(internal_chat.router)
+app.include_router(sessions.router)
 
 # ------------------------------
 # Background Consumer Thread

@@ -120,6 +120,21 @@ def apply_layout_heuristics(qa_pairs):
 
     return refined_pairs
 
+# def is_table_candidate(blocks):
+#     """
+#     Detect if page contains multi-column aligned numeric structure.
+#     Simple heuristic:
+#     - Multiple numeric answers aligned vertically
+#     - Multiple questions aligned left
+#     """
+#     numeric_answers = [
+#         b for b in blocks
+#         if b["type"] == "answer"
+#         and any(char.isdigit() for char in b["text"])
+#     ]
+
+#     return len(numeric_answers) > 5
+
 def pair_questions_answers(blocks):
 
     qa_pairs = spatial_pair_questions_answers(blocks)
