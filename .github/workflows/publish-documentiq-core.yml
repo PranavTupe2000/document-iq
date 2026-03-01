@@ -1,11 +1,11 @@
-name: Publish document-iq-core (manual)
+name: Publish document-iq-core to PyPI
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to publish (e.g. 0.0.1)"
-        required: true
+  push:
+    branches:
+      - main
+    paths:
+      - "document-iq/document-iq-core/pyproject.toml"
 
 jobs:
   publish:
@@ -13,7 +13,6 @@ jobs:
 
     permissions:
       contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
@@ -24,34 +23,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 🔍 Debug once – REMOVE after first successful run
-      - name: Debug folder structure
-        run: |
-          pwd
-          ls
-          ls document-iq
-          ls document-iq/document-iq-core
-
-      - name: Set version in pyproject.toml
-        working-directory: document-iq/document-iq-core
-        run: |
-          sed -i 's/^version *= *.*/version = "${{ inputs.version }}"/' pyproject.toml
-          echo "Updated pyproject.toml:"
-          cat pyproject.toml | grep version
-
-      - name: Build package
+      - name: Install build tools
         working-directory: document-iq/document-iq-core
         run: |
           python -m pip install --upgrade pip
           pip install build twine
+
+      - name: Build package
+        working-directory: document-iq/document-iq-core
+        run: |
           python -m build
 
-      - name: Publish package to GitHub Packages
+      - name: Publish to PyPI
         working-directory: document-iq/document-iq-core
         env:
-          TWINE_USERNAME: ${{ github.actor }}
-          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          twine upload --verbose \
-            --repository-url https://pypi.pkg.github.com/PranavTupe2000/document-iq \
-            dist/*
+          twine upload dist/*
