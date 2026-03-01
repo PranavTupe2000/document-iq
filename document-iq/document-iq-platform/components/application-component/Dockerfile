@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11.11-slim-bookworm
 
 WORKDIR /srv
 
@@ -8,7 +8,7 @@ COPY components/account-component/pyproject.toml .
 # Copy source code
 COPY components/account-component/src src
 
-RUN pip install --upgrade pip && pip install .
+RUN pip install --upgrade pip setuptools wheel && pip install --no-cache-dir .
 
 EXPOSE 8002
 

@@ -96,6 +96,8 @@ services:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
       DOCUMENT_IQ_REDIS_PORT: 6379
+      DOCUMENT_IQ_ACCOUNT_COMPONENT_URL: http://account-component:8001
+      DOCUMENT_IQ_APPLICATION_COMPONENT_URL: http://application-component:8002
     command: python -m document_iq_platform_aggregator.main
 
   dlq-tooling:
@@ -128,6 +130,7 @@ services:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_ACCOUNT_COMPONENT_URL: http://account-component:8001
       DOCUMENT_IQ_APPLICATION_COMPONENT_URL: http://application-component:8002
+      DOCUMENT_IQ_UI_PORTAL_URL : "http://ui-portal:3000"
 
   ingestion-worker:
     build:
@@ -146,10 +149,10 @@ services:
       - ingestion-data:/srv/data
     restart: unless-stopped
 
-  classification-worker:
+  classification-engine:
     build:
       context: .
-      dockerfile: components/classification-worker/Dockerfile
+      dockerfile: components/classification-engine/Dockerfile
     depends_on:
       kafka:
         condition: service_healthy
@@ -164,10 +167,10 @@ services:
 
     restart: unless-stopped
 
-  layout-worker:
+  layout-engine:
     build:
       context: .
-      dockerfile: components/layout-worker/Dockerfile
+      dockerfile: components/layout-engine/Dockerfile
     depends_on:
       kafka:
         condition: service_healthy
@@ -177,16 +180,17 @@ services:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
       DOCUMENT_IQ_REDIS_PORT: 6379
+      DOCUMENT_IQ_ENV : prod
     env_file:
       - .env
     volumes:
       - ingestion-data:/srv/data
     restart: unless-stopped
 
-  ocr-worker:
+  ocr-adapter:
     build:
       context: .
-      dockerfile: components/ocr-worker/Dockerfile
+      dockerfile: components/ocr-adapter/Dockerfile
     depends_on:
       kafka:
         condition: service_healthy
@@ -215,7 +219,10 @@ services:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
       DOCUMENT_IQ_REDIS_PORT: 6379
-      DOCUMENT_IQ_CHROMA_PERSIST_DIR: /srv/chroma_data
+      DOCUMENT_IQ_RAG_LLM_PROVIDER : groq
+      DOCUMENT_IQ_ACCOUNT_COMPONENT_URL: http://account-component:8001
+      DOCUMENT_IQ_APPLICATION_COMPONENT_URL: http://application-component:8002
+      DOCUMENT_IQ_MONGO_URI : "mongodb://mongo:3309"
     env_file:
       - .env
     restart: unless-stopped
@@ -228,7 +235,7 @@ services:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
       DOCUMENT_IQ_REDIS_PORT: 6379
-      DOCUMENT_IQ_CHROMA_PERSIST_DIR: /srv/chroma_data
+      DOCUMENT_IQ_MONGO_URI : "mongodb://mongo:3309"
     env_file:
       - .env
     ports:
@@ -245,14 +252,26 @@ services:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
       DOCUMENT_IQ_REDIS_PORT: 6379
-      DOCUMENT_IQ_CHROMA_PERSIST_DIR: /srv/chroma_data
+      DOCUMENT_IQ_DATABASE_URL : mysql+pymysql://application_user:application_pass123@mysql:3307/document_iq_application_db
+      DOCUMENT_IQ_RAG_ENGINE_URL : "http://rag-engine:8003"
+      DOCUMENT_IQ_MONGO_URI : "mongodb://mongo:3309"
     env_file:
       - .env
     ports:
       - "8002:8002"
     depends_on:
       - mysql
+      - mongo
       - kafka
+
+  ui-portal:
+    build:
+      context: .
+      dockerfile: ui-portal/document-iq-platform-ui/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ui-bff
 
 volumes:
   ingestion-data:
