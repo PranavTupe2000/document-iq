@@ -3,7 +3,7 @@ name: Publish document-iq-core to PyPI
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - "document-iq/document-iq-core/pyproject.toml"
 
