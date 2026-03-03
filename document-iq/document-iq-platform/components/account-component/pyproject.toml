@@ -17,6 +17,7 @@ dependencies = [
     "python-jose",
     "pymysql",
     "pydantic[email]",
+    "python-multipart",
     "document-iq-platform-shared"
 ]
 

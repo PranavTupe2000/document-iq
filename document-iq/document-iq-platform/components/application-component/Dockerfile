@@ -12,4 +12,4 @@ RUN pip install --upgrade pip setuptools wheel && pip install --no-cache-dir .
 
 EXPOSE 8002
 
-CMD ["uvicorn", "document_iq_platform_application.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["bash", "-c", "alembic upgrade head && uvicorn document_iq_platform_application.main:app --host 0.0.0.0 --port 8002"]
