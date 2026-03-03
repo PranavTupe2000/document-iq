@@ -11,10 +11,7 @@ dependencies = [
     "python-dotenv",
     "redis",
     "document-iq-platform-shared",
-    "mlflow",
-    "torch",
-    "torchvision",
-    "ultralytics"
+    "mlflow"
 ]
 
 [build-system]
