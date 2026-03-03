@@ -1,6 +1,9 @@
 version: "3.9"
 
 services:
+# ---------------------------------------------------------
+# Kafka and Zookeeper
+# ---------------------------------------------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     environment:
@@ -30,6 +33,10 @@ services:
       timeout: 5s
       retries: 10
 
+# ---------------------------------------------------------
+# Databases
+# ---------------------------------------------------------
+
   redis:
     image: redis:7
     ports:
@@ -37,7 +44,7 @@ services:
 
   mysql:
     image: mysql:8.0
-    container_name: documentiq-mysql
+    container_name: mysql
     restart: always
 
     environment:
@@ -77,11 +84,47 @@ services:
 
   mongo:
     image: mongo:7
-    container_name: document-iq-mongo
+    container_name: mongo
     ports:
       - "3309:27017"
     volumes:
       - mongo_data:/data/db
+# ----------------------------------------
+# Logging Stack
+# ----------------------------------------
+
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infra/logging/loki-config.yml:/etc/loki/config.yml
+    command: -config.file=/etc/loki/config.yml
+
+  promtail:
+    image: grafana/promtail:2.9.3
+    container_name: promtail
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./infra/logging/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    ports:
+      - "4000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - loki
+
+# ---------------------------------------------------------
+# Platform Microservices
+# ---------------------------------------------------------
 
   aggregator:
     build:
@@ -92,6 +135,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      service: aggregator
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -109,6 +154,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      service: dlq-toolin
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -126,11 +173,13 @@ services:
         condition: service_started
     ports:
       - "8000:8000"
+    labels:
+      service: ui-bff
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_ACCOUNT_COMPONENT_URL: http://account-component:8001
       DOCUMENT_IQ_APPLICATION_COMPONENT_URL: http://application-component:8002
-      DOCUMENT_IQ_UI_PORTAL_URL : "http://localhost:3000"
+      DOCUMENT_IQ_UI_PORTAL_URL : http://localhost:3000
 
   ingestion-worker:
     build:
@@ -141,6 +190,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      service: ingestion-worker
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -158,6 +209,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      service: classififcation-engine
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -176,6 +229,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      service: layout-engine
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -196,6 +251,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    labels:
+      service: ocr-adapter
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -215,6 +272,8 @@ services:
         condition: service_started
       chromadb:
         condition: service_started
+    labels:
+      service: rag-engine
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -231,11 +290,14 @@ services:
     build:
       context: .
       dockerfile: components/account-component/Dockerfile
+    labels:
+      service: account-component
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
       DOCUMENT_IQ_REDIS_PORT: 6379
       DOCUMENT_IQ_MONGO_URI : "mongodb://mongo:3309"
+      DOCUMENT_IQ_DATABASE_URL : mysql+pymysql://account_user:account_pass123@mysql:3306/document_iq_account_db
     env_file:
       - .env
     ports:
@@ -248,6 +310,8 @@ services:
     build:
       context: .
       dockerfile: components/application-component/Dockerfile
+    labels:
+      service: application-component
     environment:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_REDIS_HOST: redis
@@ -270,6 +334,8 @@ services:
       dockerfile: ui-portal/document-iq-platform-ui/Dockerfile
     ports:
       - "3000:80"
+    labels:
+      service: ui-portal
     depends_on:
       - ui-bff
 
