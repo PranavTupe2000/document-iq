@@ -130,7 +130,7 @@ services:
       DOCUMENT_IQ_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       DOCUMENT_IQ_ACCOUNT_COMPONENT_URL: http://account-component:8001
       DOCUMENT_IQ_APPLICATION_COMPONENT_URL: http://application-component:8002
-      DOCUMENT_IQ_UI_PORTAL_URL : "http://ui-portal:3000"
+      DOCUMENT_IQ_UI_PORTAL_URL : "http://localhost:3000"
 
   ingestion-worker:
     build:
@@ -269,7 +269,7 @@ services:
       context: .
       dockerfile: ui-portal/document-iq-platform-ui/Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - ui-bff
 

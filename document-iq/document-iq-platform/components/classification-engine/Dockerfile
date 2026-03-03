@@ -2,8 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /srv
 
-COPY components/classification-worker/pyproject.toml .
-COPY components/classification-worker/src src
+COPY components/classification-engine/pyproject.toml .
+COPY components/classification-engine/src src
 
 RUN pip install --upgrade pip && pip install .
 

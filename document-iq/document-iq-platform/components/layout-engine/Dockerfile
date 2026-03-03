@@ -2,8 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /srv
 
-COPY components/layout-worker/pyproject.toml .
-COPY components/layout-worker/src src
+COPY components/layout-engine/pyproject.toml .
+COPY components/layout-engine/src src
 
 RUN pip install --upgrade pip && pip install .
 
