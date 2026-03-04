@@ -3,6 +3,9 @@ from typing import Optional
 
 class Settings(BaseSettings):
 
+    # Micro-service
+    service_name: str = "unknown-service" 
+
     # Kafka
     kafka_bootstrap_servers: str
 
@@ -57,6 +60,9 @@ class Settings(BaseSettings):
     account_component_url: Optional[str] = None
     application_component_url: Optional[str] = None
     ui_portal_url: Optional[str] = None
+    
+    # Tempo
+    tempo_endpoint: Optional[str] = None
 
     class Config:
         env_prefix = "DOCUMENT_IQ_"

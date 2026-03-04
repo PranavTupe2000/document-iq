@@ -4,7 +4,10 @@ import sys
 import json
 from datetime import datetime
 
-SERVICE_NAME = os.getenv("SERVICE_NAME", "unknown-service")
+from platform_shared.config.settings import Settings
+settings = Settings()
+
+SERVICE_NAME = settings.service_name
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 
 
