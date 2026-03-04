@@ -1,0 +1,100 @@
+<svg width="1100" height="700" viewBox="0 0 1100 700" xmlns="http://www.w3.org/2000/svg" font-family="Arial">
+
+<!-- Background -->
+<rect width="1100" height="700" fill="#f8fafc"/>
+
+<!-- Title -->
+<text x="550" y="40" text-anchor="middle" font-size="26" font-weight="bold">
+Document-IQ System Architecture
+</text>
+
+<!-- UI Layer -->
+<rect x="450" y="80" width="200" height="60" rx="8" fill="#2563eb"/>
+<text x="550" y="115" text-anchor="middle" fill="white" font-size="14">UI Portal (React)</text>
+
+<!-- BFF -->
+<rect x="450" y="170" width="200" height="60" rx="8" fill="#3b82f6"/>
+<text x="550" y="205" text-anchor="middle" fill="white" font-size="14">UI BFF Gateway</text>
+
+<!-- Application -->
+<rect x="450" y="260" width="200" height="60" rx="8" fill="#60a5fa"/>
+<text x="550" y="295" text-anchor="middle" fill="white" font-size="14">Application API</text>
+
+<!-- Kafka -->
+<rect x="420" y="360" width="260" height="70" rx="10" fill="#10b981"/>
+<text x="550" y="400" text-anchor="middle" fill="white" font-size="15">Kafka Event Bus</text>
+
+<!-- Microservices Row -->
+
+<!-- Ingestion -->
+<rect x="80" y="490" width="140" height="70" rx="8" fill="#6366f1"/>
+<text x="150" y="525" text-anchor="middle" fill="white" font-size="12">Ingestion</text>
+<text x="150" y="542" text-anchor="middle" fill="white" font-size="12">Worker</text>
+
+<!-- OCR -->
+<rect x="250" y="490" width="140" height="70" rx="8" fill="#6366f1"/>
+<text x="320" y="525" text-anchor="middle" fill="white" font-size="12">OCR</text>
+<text x="320" y="542" text-anchor="middle" fill="white" font-size="12">Adapter</text>
+
+<!-- Classification -->
+<rect x="420" y="490" width="140" height="70" rx="8" fill="#6366f1"/>
+<text x="490" y="525" text-anchor="middle" fill="white" font-size="12">Classification</text>
+<text x="490" y="542" text-anchor="middle" fill="white" font-size="12">Engine</text>
+
+<!-- Layout -->
+<rect x="590" y="490" width="140" height="70" rx="8" fill="#6366f1"/>
+<text x="660" y="525" text-anchor="middle" fill="white" font-size="12">Layout</text>
+<text x="660" y="542" text-anchor="middle" fill="white" font-size="12">Engine</text>
+
+<!-- Aggregator -->
+<rect x="760" y="490" width="140" height="70" rx="8" fill="#6366f1"/>
+<text x="830" y="530" text-anchor="middle" fill="white" font-size="12">Aggregator</text>
+
+<!-- RAG -->
+<rect x="930" y="490" width="140" height="70" rx="8" fill="#6366f1"/>
+<text x="1000" y="525" text-anchor="middle" fill="white" font-size="12">RAG</text>
+<text x="1000" y="542" text-anchor="middle" fill="white" font-size="12">Engine</text>
+
+<!-- Vertical Arrows: UI stack -->
+<line x1="550" y1="140" x2="550" y2="170" stroke="black" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="550" y1="230" x2="550" y2="260" stroke="black" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="550" y1="320" x2="550" y2="360" stroke="black" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- Horizontal bus line connecting all microservices to Kafka -->
+<line x1="150" y1="455" x2="1000" y2="455" stroke="#10b981" stroke-width="2" stroke-dasharray="6,3"/>
+
+<!-- Vertical drops from Kafka bottom to horizontal bus -->
+<line x1="550" y1="430" x2="550" y2="455" stroke="#10b981" stroke-width="2"/>
+
+<!-- Vertical drops from bus to each microservice -->
+<line x1="150" y1="455" x2="150" y2="490" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+<line x1="320" y1="455" x2="320" y2="490" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+<line x1="490" y1="455" x2="490" y2="490" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+<line x1="660" y1="455" x2="660" y2="490" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+<line x1="830" y1="455" x2="830" y2="490" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+<line x1="1000" y1="455" x2="1000" y2="490" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+<!-- Arrow markers -->
+<defs>
+  <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="black"/>
+  </marker>
+  <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+  </marker>
+</defs>
+
+<!-- Observability -->
+<rect x="50" y="600" width="200" height="60" rx="8" fill="#f59e0b"/>
+<text x="150" y="635" text-anchor="middle" fill="white" font-size="12">OpenTelemetry</text>
+
+<rect x="350" y="600" width="200" height="60" rx="8" fill="#f59e0b"/>
+<text x="450" y="635" text-anchor="middle" fill="white" font-size="12">Loki / Promtail</text>
+
+<rect x="650" y="600" width="200" height="60" rx="8" fill="#f59e0b"/>
+<text x="750" y="635" text-anchor="middle" fill="white" font-size="12">Tempo</text>
+
+<rect x="900" y="600" width="150" height="60" rx="8" fill="#f59e0b"/>
+<text x="975" y="635" text-anchor="middle" fill="white" font-size="12">Grafana</text>
+
+</svg>

@@ -1,0 +1,44 @@
+<svg width="1000" height="420" viewBox="0 0 1000 420" xmlns="http://www.w3.org/2000/svg" font-family="Arial">
+
+<rect width="1000" height="420" fill="#f8fafc"/>
+
+<text x="500" y="40" text-anchor="middle" font-size="24" font-weight="bold">
+Document Processing Pipeline
+</text>
+
+<!-- Upload -->
+<rect x="60" y="180" width="130" height="60" rx="8" fill="#2563eb"/>
+<text x="125" y="215" text-anchor="middle" fill="white">Upload</text>
+
+<!-- Ingestion -->
+<rect x="220" y="180" width="130" height="60" rx="8" fill="#3b82f6"/>
+<text x="285" y="210" text-anchor="middle" fill="white">Ingestion</text>
+<text x="285" y="225" text-anchor="middle" fill="white">Worker</text>
+
+<!-- OCR -->
+<rect x="380" y="180" width="130" height="60" rx="8" fill="#6366f1"/>
+<text x="445" y="210" text-anchor="middle" fill="white">OCR</text>
+<text x="445" y="225" text-anchor="middle" fill="white">Adapter</text>
+
+<!-- Classification -->
+<rect x="540" y="180" width="130" height="60" rx="8" fill="#6366f1"/>
+<text x="605" y="210" text-anchor="middle" fill="white">Document</text>
+<text x="605" y="225" text-anchor="middle" fill="white">Classification</text>
+
+<!-- Layout -->
+<rect x="700" y="180" width="130" height="60" rx="8" fill="#6366f1"/>
+<text x="765" y="210" text-anchor="middle" fill="white">Layout</text>
+<text x="765" y="225" text-anchor="middle" fill="white">Detection</text>
+
+<!-- Storage -->
+<rect x="860" y="180" width="120" height="60" rx="8" fill="#10b981"/>
+<text x="920" y="215" text-anchor="middle" fill="white">Storage</text>
+
+<!-- Arrows -->
+<line x1="190" y1="210" x2="220" y2="210" stroke="black"/>
+<line x1="350" y1="210" x2="380" y2="210" stroke="black"/>
+<line x1="510" y1="210" x2="540" y2="210" stroke="black"/>
+<line x1="670" y1="210" x2="700" y2="210" stroke="black"/>
+<line x1="830" y1="210" x2="860" y2="210" stroke="black"/>
+
+</svg>

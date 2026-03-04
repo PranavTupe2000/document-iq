@@ -1,0 +1,43 @@
+<svg width="1000" height="450" viewBox="0 0 1000 450" xmlns="http://www.w3.org/2000/svg" font-family="Arial">
+
+<rect width="1000" height="450" fill="#f8fafc"/>
+
+<text x="500" y="40" text-anchor="middle" font-size="24" font-weight="bold">
+Observability Architecture
+</text>
+
+<!-- Services -->
+<rect x="430" y="100" width="140" height="60" rx="8" fill="#2563eb"/>
+<text x="500" y="135" text-anchor="middle" fill="white">Microservices</text>
+
+<!-- OTel -->
+<rect x="430" y="200" width="140" height="60" rx="8" fill="#3b82f6"/>
+<text x="500" y="235" text-anchor="middle" fill="white">OpenTelemetry</text>
+
+<!-- Logs -->
+<rect x="220" y="320" width="140" height="60" rx="8" fill="#6366f1"/>
+<text x="290" y="350" text-anchor="middle" fill="white">Loki</text>
+<text x="290" y="365" text-anchor="middle" fill="white">Logs</text>
+
+<!-- Traces -->
+<rect x="430" y="320" width="140" height="60" rx="8" fill="#6366f1"/>
+<text x="500" y="350" text-anchor="middle" fill="white">Tempo</text>
+<text x="500" y="365" text-anchor="middle" fill="white">Tracing</text>
+
+<!-- Metrics -->
+<rect x="640" y="320" width="140" height="60" rx="8" fill="#6366f1"/>
+<text x="710" y="350" text-anchor="middle" fill="white">Prometheus</text>
+<text x="710" y="365" text-anchor="middle" fill="white">Metrics</text>
+
+<!-- Grafana -->
+<rect x="430" y="400" width="140" height="60" rx="8" fill="#f59e0b"/>
+<text x="500" y="435" text-anchor="middle" fill="white">Grafana</text>
+
+<!-- Arrows -->
+<line x1="500" y1="160" x2="500" y2="200" stroke="black"/>
+<line x1="500" y1="260" x2="290" y2="320" stroke="black"/>
+<line x1="500" y1="260" x2="500" y2="320" stroke="black"/>
+<line x1="500" y1="260" x2="710" y2="320" stroke="black"/>
+<line x1="500" y1="380" x2="500" y2="400" stroke="black"/>
+
+</svg>
