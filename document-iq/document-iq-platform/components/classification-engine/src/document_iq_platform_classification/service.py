@@ -4,6 +4,9 @@ from platform_shared.storage.redis_client import get_redis_client
 from platform_shared.messaging.kafka import create_producer
 from document_iq_core.utils import get_logger
 from document_iq_platform_classification.model_loader import load_model
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 logger = get_logger("ClassificationService")
 settings = Settings()
@@ -14,47 +17,39 @@ model = load_model()
 
 
 def process_event(event: dict):
-    request_id = event["request_id"]
-    file_path = event["file_path"]
+    with tracer.start_as_current_span("process_kafka_event"):
+        request_id = event["request_id"]
+        file_path = event["file_path"]
 
-    workflow_key = f"workflow:{request_id}"
+        workflow_key = f"workflow:{request_id}"
 
-    # Fetch OCR text from Redis
-    ocr_text = redis_client.hget(workflow_key, "ocr_text")
+        # Fetch OCR text from Redis
+        ocr_text = redis_client.hget(workflow_key, "ocr_text")
 
-    if not ocr_text:
-        raise Exception(f"OCR text missing for {request_id}")
+        if not ocr_text:
+            raise Exception(f"OCR text missing for {request_id}")
 
-    logger.info(f"Running classification for {request_id}")
+        logger.info(f"Running classification for {request_id}")
 
-    prediction = model.predict([ocr_text])[0]
+        prediction = model.predict([ocr_text])[0]
 
-    redis_client.hset(
-        workflow_key,
-        mapping={
-            "classification_status": "completed",
-            "classification_result": prediction,
-            "current_stage": "classification_completed",
-        },
-    )
+        redis_client.hset(
+            workflow_key,
+            mapping={
+                "classification_status": "completed",
+                "classification_result": prediction,
+                "current_stage": "classification_completed",
+            },
+        )
 
-    # message = {
-    #         "request_id": request_id,
-    #         "classification_result": prediction,
-    #         "file_path": file_path,
-    #     }
-    
-    # print(message)
-    # logger.info(f"Sending message: {message}")
+        producer.send(
+            "document.classification.completed",
+            {
+                "request_id": request_id,
+                "classification_result": prediction,
+                "file_path": file_path,
+            },
+        )
+        producer.flush()
 
-    producer.send(
-        "document.classification.completed",
-        {
-            "request_id": request_id,
-            "classification_result": prediction,
-            "file_path": file_path,
-        },
-    )
-    producer.flush()
-
-    logger.info(f"Classification completed for {request_id}")
+        logger.info(f"Classification completed for {request_id}")

@@ -3,10 +3,19 @@ from fastapi import FastAPI
 
 from document_iq_platform_rag.consumer import start_consumer
 from document_iq_platform_rag.api import query
-import uvicorn  # your new query router
+import uvicorn
 
+from platform_shared.tracing import setup_tracing
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+
+setup_tracing()
 
 app = FastAPI(title="DocumentIQ RAG Engine")
+
+FastAPIInstrumentor.instrument_app(app)
+SQLAlchemyInstrumentor().instrument()
+
 
 
 # ------------------------------

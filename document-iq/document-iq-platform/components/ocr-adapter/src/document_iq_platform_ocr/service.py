@@ -6,7 +6,9 @@ from platform_shared.config.settings import Settings
 from document_iq_core.utils import get_logger
 from document_iq_platform_ocr.providers.factory import get_ocr_provider
 from document_iq_platform_ocr.models.ocr_result import OCRResult
+from opentelemetry import trace
 
+tracer = trace.get_tracer(__name__)
 
 logger = get_logger("OCRService")
 
@@ -22,77 +24,77 @@ ocr_provider = get_ocr_provider()
 
 
 def process_event(event: dict):
+    with tracer.start_as_current_span("process_kafka_event"):
+        request_id = event["request_id"]
+        file_path = event["file_path"]
 
-    request_id = event["request_id"]
-    file_path = event["file_path"]
+        logger.info(f"OCR started: {request_id}")
 
-    logger.info(f"OCR started: {request_id}")
+        try:
 
-    try:
+            result: OCRResult = ocr_provider.extract(file_path)
 
-        result: OCRResult = ocr_provider.extract(file_path)
+            if not result.pages:
+                raise RuntimeError("Empty OCR result")
 
-        if not result.pages:
-            raise RuntimeError("Empty OCR result")
+            all_lines = []
 
-        all_lines = []
+            for page in result.pages:
+                all_lines.extend(page.lines)
 
-        for page in result.pages:
-            all_lines.extend(page.lines)
+            extracted_text = "\n".join(all_lines)
 
-        extracted_text = "\n".join(all_lines)
+            # Convert words to JSON-safe dict
+            words_payload = []
 
-        # Convert words to JSON-safe dict
-        words_payload = []
+            if result.words:
+                for word in result.words:
+                    words_payload.append({
+                        "text": word.text,
+                        "bbox": word.bbox,
+                        "page": word.page,
+                    })
 
-        if result.words:
-            for word in result.words:
-                words_payload.append({
-                    "text": word.text,
-                    "bbox": word.bbox,
-                    "page": word.page,
-                })
+            ocr_result_payload = {
+                "words": words_payload,
+                "full_text": extracted_text,
+            }
 
-        ocr_result_payload = {
-            "words": words_payload,
-            "full_text": extracted_text,
-        }
+            redis_client.hset(
+                f"workflow:{request_id}",
+                mapping={
+                    "ocr_status": "completed",
+                    "ocr_text": extracted_text,  # backward compatible
+                    "ocr_result": json.dumps(ocr_result_payload),
+                    "current_stage": "ocr_completed",
+                },
+            )
 
-        redis_client.hset(
-            f"workflow:{request_id}",
-            mapping={
-                "ocr_status": "completed",
-                "ocr_text": extracted_text,  # backward compatible
-                "ocr_result": json.dumps(ocr_result_payload),
-                "current_stage": "ocr_completed",
-            },
-        )
+            producer.send(
+                "document.ocr.completed",
+                {
+                    "request_id": request_id,
+                    "file_path": file_path,
+                },
+            )
 
-        producer.send(
-            "document.ocr.completed",
-            {
-                "request_id": request_id,
-                "file_path": file_path,
-            },
-        )
+            producer.flush()
 
-        producer.flush()
+            logger.info(f"OCR completed: {request_id}")
 
-        logger.info(f"OCR completed: {request_id}")
+        except Exception as exc:
 
-    except Exception as exc:
+            logger.exception(
+                f"OCR failed: {request_id} | {exc}"
+            )
 
-        logger.exception(
-            f"OCR failed: {request_id} | {exc}"
-        )
+            redis_client.hset(
+                f"workflow:{request_id}",
+                mapping={
+                    "ocr_status": "failed",
+                    "ocr_error": str(exc),
+                    "current_stage": "ocr_failed",
+                },
+            )
 
-        redis_client.hset(
-            f"workflow:{request_id}",
-            mapping={
-                "ocr_status": "failed",
-                "ocr_error": str(exc),
-                "current_stage": "ocr_failed",
-            },
-        )
-
-        raise
+            raise

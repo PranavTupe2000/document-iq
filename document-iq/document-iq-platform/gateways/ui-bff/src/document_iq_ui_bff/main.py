@@ -8,7 +8,17 @@ from platform_shared.config.settings import Settings
 
 settings = Settings()
 
+from platform_shared.tracing import setup_tracing
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+
+setup_tracing()
+
 app = FastAPI(title="DocumentIQ UI-BFF")
+
+FastAPIInstrumentor.instrument_app(app)
+SQLAlchemyInstrumentor().instrument()
+
 
 app.add_middleware(
     CORSMiddleware,

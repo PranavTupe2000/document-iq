@@ -13,7 +13,9 @@ from document_iq_core.utils import get_logger
 from document_iq_platform_rag.vectorstore.chroma_client import get_vectorstore
 from document_iq_platform_rag.chunking.text_splitter import get_text_splitter
 from document_iq_platform_rag.llm_providers.factory import get_llm_provider
+from opentelemetry import trace
 
+tracer = trace.get_tracer(__name__)
 
 logger = get_logger("RAGService")
 
@@ -40,76 +42,77 @@ def _parse_int_field(data: dict, key: str, required: bool = False):
 
 
 def process_event(event: dict):
-    request_id = event["request_id"]
-    workflow = redis_client.hgetall(f"workflow:{request_id}")
+    with tracer.start_as_current_span("process_kafka_event"):
+        request_id = event["request_id"]
+        workflow = redis_client.hgetall(f"workflow:{request_id}")
 
-    try:
-        org_id = _parse_int_field(workflow, "organization_id", required=True)
-        group_id = _parse_int_field(workflow, "group_id")
-        document_id = _parse_int_field(workflow, "document_id")
-    except ValueError as exc:
-        logger.error(f"Invalid workflow data for {request_id}: {exc}")
-        redis_client.hset(
-            f"workflow:{request_id}",
-            mapping={
-                "rag_status": "failed",
-                "current_stage": "rag_failed",
-                "overall_status": "failed",
-                "error": str(exc),
-            },
+        try:
+            org_id = _parse_int_field(workflow, "organization_id", required=True)
+            group_id = _parse_int_field(workflow, "group_id")
+            document_id = _parse_int_field(workflow, "document_id")
+        except ValueError as exc:
+            logger.error(f"Invalid workflow data for {request_id}: {exc}")
+            redis_client.hset(
+                f"workflow:{request_id}",
+                mapping={
+                    "rag_status": "failed",
+                    "current_stage": "rag_failed",
+                    "overall_status": "failed",
+                    "error": str(exc),
+                },
+            )
+            return
+
+        classification = workflow.get("classification_result", "unknown")
+        layout_data = workflow.get("layout_result")
+
+        if not layout_data:
+            logger.error("Layout result missing")
+            return
+
+        layout_json = ast.literal_eval(layout_data)
+
+        # Save layout AST
+        save_layout_ast(
+            document_id=document_id,
+            org_id=org_id,
+            group_id=group_id,
+            layout_ast=layout_json
         )
-        return
 
-    classification = workflow.get("classification_result", "unknown")
-    layout_data = workflow.get("layout_result")
+        # ======================================================
+        # 1️⃣ Build Context
+        # ======================================================
+        context = build_hierarchical_context(layout_json)
+        table_context = extract_table_insights(layout_json)
 
-    if not layout_data:
-        logger.error("Layout result missing")
-        return
+        if not context.strip():
+            logger.error("No valid layout blocks found")
+            return
 
-    layout_json = ast.literal_eval(layout_data)
+        # ======================================================
+        # 2️⃣ Add Blocks to Vector Store
+        # ======================================================
+        documents = build_block_documents(
+            layout_json=layout_json,
+            org_id=org_id,
+            group_id=group_id,
+            document_id=document_id,
+            classification=classification,
+            text_splitter=text_splitter,
+        )
 
-    # Save layout AST
-    save_layout_ast(
-        document_id=document_id,
-        org_id=org_id,
-        group_id=group_id,
-        layout_ast=layout_json
-    )
+        vectorstore = get_vectorstore(org_id)
 
-    # ======================================================
-    # 1️⃣ Build Context
-    # ======================================================
-    context = build_hierarchical_context(layout_json)
-    table_context = extract_table_insights(layout_json)
+        if documents:
+            vectorstore.add_documents(documents)
+            logger.info(f"Chroma docs after insert: {vectorstore._collection.count()}")
 
-    if not context.strip():
-        logger.error("No valid layout blocks found")
-        return
+        # ======================================================
+        # 3️⃣ SINGLE LLM CALL (Summary + Entities)
+        # ======================================================
 
-    # ======================================================
-    # 2️⃣ Add Blocks to Vector Store
-    # ======================================================
-    documents = build_block_documents(
-        layout_json=layout_json,
-        org_id=org_id,
-        group_id=group_id,
-        document_id=document_id,
-        classification=classification,
-        text_splitter=text_splitter,
-    )
-
-    vectorstore = get_vectorstore(org_id)
-
-    if documents:
-        vectorstore.add_documents(documents)
-        logger.info(f"Chroma docs after insert: {vectorstore._collection.count()}")
-
-    # ======================================================
-    # 3️⃣ SINGLE LLM CALL (Summary + Entities)
-    # ======================================================
-
-    full_prompt = f"""
+        full_prompt = f"""
 You are an advanced document intelligence system.
 
 Document Classification: {classification}
@@ -154,99 +157,99 @@ Rules:
 - Output valid JSON only
 """
 
-    try:
-        structured_response = llm.generate(full_prompt)
+        try:
+            structured_response = llm.generate(full_prompt)
 
-        if not isinstance(structured_response, dict):
-            raise ValueError("Invalid structured response from LLM")
+            if not isinstance(structured_response, dict):
+                raise ValueError("Invalid structured response from LLM")
 
-    except Exception as exc:
-        logger.exception(f"RAG failed for {request_id}: {exc}")
+        except Exception as exc:
+            logger.exception(f"RAG failed for {request_id}: {exc}")
+            redis_client.hset(
+                f"workflow:{request_id}",
+                mapping={
+                    "rag_status": "failed",
+                    "current_stage": "rag_failed",
+                    "overall_status": "failed",
+                    "error": str(exc),
+                },
+            )
+            return
+
+        # ======================================================
+        # 4️⃣ Extract & Clamp Data
+        # ======================================================
+
+        summary = structured_response.get("summary")
+        key_insights = structured_response.get("key_insights", [])
+        document_type = structured_response.get("document_type", classification)
+
+        confidence = structured_response.get("confidence", 0.7)
+        try:
+            confidence = float(confidence)
+        except Exception:
+            confidence = 0.7
+
+        confidence = max(0.0, min(confidence, 0.95))
+
+        structured_entities = structured_response.get("structured_entities", {})
+        entities = structured_entities.get("entities", [])
+
+        # Clamp entity confidence
+        for e in entities:
+            try:
+                e["confidence"] = max(
+                    0.0,
+                    min(float(e.get("confidence", 0.7)), 0.95)
+                )
+            except Exception:
+                e["confidence"] = 0.7
+
+        final_result = {
+            "summary": summary,
+            "key_insights": key_insights,
+            "document_type": document_type,
+            "confidence": confidence,
+            "structured_entities": {
+                "entities": entities
+            },
+        }
+
+        # ======================================================
+        # 5️⃣ Save to Mongo
+        # ======================================================
+
+        save_document_summary(
+            document_id=document_id,
+            org_id=org_id,
+            group_id=group_id,
+            classification=classification,
+            summary=summary,
+            key_insights=key_insights,
+            structured_entities={"entities": entities},
+        )
+
+        # ======================================================
+        # 6️⃣ Update Workflow
+        # ======================================================
+
         redis_client.hset(
             f"workflow:{request_id}",
             mapping={
-                "rag_status": "failed",
-                "current_stage": "rag_failed",
-                "overall_status": "failed",
-                "error": str(exc),
+                "rag_status": "completed",
+                "rag_response": json.dumps(final_result),
+                "current_stage": "completed",
+                "overall_status": "completed",
             },
         )
-        return
 
-    # ======================================================
-    # 4️⃣ Extract & Clamp Data
-    # ======================================================
+        producer.send(
+            "document.rag.completed",
+            {"request_id": request_id},
+        )
+        producer.flush()
 
-    summary = structured_response.get("summary")
-    key_insights = structured_response.get("key_insights", [])
-    document_type = structured_response.get("document_type", classification)
-
-    confidence = structured_response.get("confidence", 0.7)
-    try:
-        confidence = float(confidence)
-    except Exception:
-        confidence = 0.7
-
-    confidence = max(0.0, min(confidence, 0.95))
-
-    structured_entities = structured_response.get("structured_entities", {})
-    entities = structured_entities.get("entities", [])
-
-    # Clamp entity confidence
-    for e in entities:
-        try:
-            e["confidence"] = max(
-                0.0,
-                min(float(e.get("confidence", 0.7)), 0.95)
-            )
-        except Exception:
-            e["confidence"] = 0.7
-
-    final_result = {
-        "summary": summary,
-        "key_insights": key_insights,
-        "document_type": document_type,
-        "confidence": confidence,
-        "structured_entities": {
-            "entities": entities
-        },
-    }
-
-    # ======================================================
-    # 5️⃣ Save to Mongo
-    # ======================================================
-
-    save_document_summary(
-        document_id=document_id,
-        org_id=org_id,
-        group_id=group_id,
-        classification=classification,
-        summary=summary,
-        key_insights=key_insights,
-        structured_entities={"entities": entities},
-    )
-
-    # ======================================================
-    # 6️⃣ Update Workflow
-    # ======================================================
-
-    redis_client.hset(
-        f"workflow:{request_id}",
-        mapping={
-            "rag_status": "completed",
-            "rag_response": json.dumps(final_result),
-            "current_stage": "completed",
-            "overall_status": "completed",
-        },
-    )
-
-    producer.send(
-        "document.rag.completed",
-        {"request_id": request_id},
-    )
-    producer.flush()
-
-    logger.info(f"Hybrid RAG completed for {request_id}")
+        logger.info(f"Hybrid RAG completed for {request_id}")
 
 
 # ======================================================
