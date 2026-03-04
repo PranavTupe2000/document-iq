@@ -35,7 +35,6 @@ async def analyze_document(
     request_id = f"req_{uuid.uuid4().hex}"
     content_base64 = base64.b64encode(content).decode("utf-8")
     
-    #TODO: Remove this later
     document_id = request_id[4:]
 
     event = {
