@@ -16,7 +16,7 @@ def setup_tracing():
     trace.set_tracer_provider(provider)
 
     exporter = OTLPSpanExporter(
-        endpoint=Settings.tempo_endpoint,
+        endpoint=settings.tempo_endpoint,
         insecure=True,
     )
 
